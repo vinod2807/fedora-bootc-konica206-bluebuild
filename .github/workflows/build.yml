@@ -1,0 +1,61 @@
+name: bluebuild
+on:
+  schedule:
+    - cron: "30 21 * * 6" # Sunday 03:00 IST / Saturday 21:30 UTC, like the original
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bluebuild:
+    name: Build and publish image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # signing, as in the official template
+    steps:
+      # Pin to a full commit SHA once the first build works (the original repo does).
+      - uses: blue-build/github-action@v1
+        with:
+          recipe: recipe.yml
+          cosign_private_key: ${{ secrets.SIGNING_SECRET }}
+          registry_token: ${{ github.token }}
+          pr_event_number: ${{ github.event.number }}
+          maximize_build_space: true
+          # Leave use_cache off: the stage and scripts fetch moving upstream
+          # sources (printer repos, NAPS2/ZapFast), which a layer cache would hide.
+
+  # Post-publish smoke test: install the published image to a virtual disk and
+  # boot it under SeaBIOS (legacy BIOS). This does NOT block the publish above
+  # (build-time printer tests do); it tells you whether :latest is BIOS-bootable.
+  bios-boot-test:
+    name: Install + legacy-BIOS boot test (QEMU SeaBIOS)
+    needs: bluebuild
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 qemu-utils
+      - name: Run test
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/fedora-bootc-konica206-bluebuild:latest"
+          sudo tools/bios-boot-test.sh "$image"
+      - name: Upload serial log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bios-boot-serial-log
+          path: bios-boot-serial.log
+          retention-days: 14

@@ -1,0 +1,212 @@
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+#
+# BlueBuild port of vinod2807/fedora-bootc-konica206 -- labwc desktop edition.
+# Printer/system side tracks upstream (tools/import-from-source.sh); the desktop
+# (labwc + sfwbar + foot + greetd/tuigreet) is owned by THIS repo, because upstream
+# moved to Cinnamon/LightDM and this image deliberately does not.
+---
+name: fedora-bootc-konica206-bluebuild
+description: Fedora bootc - labwc desktop + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
+base-image: ghcr.io/blue-build/base-images/fedora-base
+# Follows the Fedora release train like the original (BASE_IMAGE=:latest).
+# To freeze, set e.g. "44" here AND change `from:` of the stage below.
+image-version: latest
+platforms:
+  - linux/amd64
+
+labels:
+  org.opencontainers.image.title: "Fedora bootc - labwc + Konica bizhub 206 (BlueBuild)"
+  org.opencontainers.image.licenses: "NOASSERTION"
+  # Printer source commit SHAs are recorded inside the image instead:
+  #   /usr/share/konica206/{app,native,retrofit}-commit
+
+stages:
+  # Port of the `printer-builder` stage of the original Containerfile.
+  - name: konica-build
+    from: quay.io/fedora/fedora:latest
+    modules:
+      - type: files
+        files:
+          - source: stage-inputs
+            destination: /usr/src/stage-inputs
+      - type: script
+        scripts:
+          - build-konica-stage.sh
+
+modules:
+  # Weekly rebuilds pick up current Fedora updates (original: dnf upgrade --refresh).
+  - type: script
+    snippets:
+      - "dnf -y upgrade --refresh"
+
+  # Packages first, files after: files such as /etc/samba/smb.conf must overwrite
+  # the packaged defaults (the original Containerfile copies them after dnf, too).
+  - type: dnf
+    install:
+      install-weak-deps: false
+      packages:
+        # --- labwc desktop ---
+        - labwc
+        - sfwbar
+        - foot
+        - greetd
+        - tuigreet
+        - fuzzel
+        - swaybg
+        - swayidle
+        - brightnessctl
+        - mako
+        - grim
+        - slurp
+        - wl-clipboard
+        - wob
+        - wdisplays
+        - lxpolkit
+        - udiskie
+        - xorg-x11-server-Xwayland
+        # --- apps ---
+        - Thunar
+        - thunar-volman
+        - thunar-archive-plugin
+        - tumbler
+        - gthumb
+        - evince
+        - mousepad
+        - xarchiver
+        - pavucontrol
+        - simple-scan
+        - weechat
+        - flatseal
+        - gparted
+        - gnome-font-viewer
+        - fastfetch
+        - gh
+        # --- integration: portals, keyring, session, network, audio, theme ---
+        - xdg-desktop-portal
+        - xdg-desktop-portal-gtk
+        - xdg-desktop-portal-wlr
+        - xdg-user-dirs
+        - xdg-utils
+        - gnome-keyring
+        - gnome-keyring-pam
+        - seahorse
+        - dbus-daemon
+        - dconf
+        - desktop-file-utils
+        - NetworkManager-wifi
+        - NetworkManager-openconnect
+        - NetworkManager-openvpn
+        - nm-connection-editor
+        - network-manager-applet
+        - wpa_supplicant
+        - pipewire
+        - pipewire-pulseaudio
+        - wireplumber
+        - adwaita-cursor-theme
+        - adwaita-icon-theme
+        - hicolor-icon-theme
+        - default-fonts
+        - libxkbcommon
+        - alsa-lib
+        - gvfs
+        - gvfs-fuse
+        - gvfs-gphoto2
+        - gvfs-mtp
+        - gvfs-smb
+        - fuse
+        - fuse-libs
+        - zip
+        - zram-generator
+        - flatpak
+        - mesa-dri-drivers
+        - mesa-libEGL
+        - mesa-vulkan-drivers
+        - vulkan-loader
+        - qt5-qtbase-gui
+        - usbutils
+        - policycoreutils-python-utils
+        # --- printing / scanning / sharing ---
+        - avahi
+        - cups
+        - cups-filters
+        - ghostscript
+        - system-config-printer
+        - legacy-printer-app
+        - pappl
+        - libusb1
+        - sane-airscan
+        - samba
+        - samba-client
+
+  # Static assets at their final absolute paths (see tools/import-from-source.sh)
+  # plus the labwc desktop integration files this repo owns.
+  - type: files
+    files:
+      - source: system
+        destination: /
+      - source: local-rpms
+        destination: /usr/share/konica206-build/local-rpms
+
+  # Vendored Epson Printer Utility + sane-ar206 RPMs (NAPS2/ZapFast are runtime Flatpaks upstream now).
+  - type: script
+    scripts:
+      - vendor-rpms.sh
+
+  # Printer binaries + retrofit assets assembled by the builder stage (one COPY, like the original).
+  - type: copy
+    from: konica-build
+    src: /out/
+    dest: /
+
+  # konica user, vendor-data symlink, generated PPD, chmods, cupsd sharing, dconf, Flathub remote, GRUB timeout...
+  - type: script
+    scripts:
+      - konica-final.sh
+
+  - type: systemd
+    system:
+      enabled:
+        - bootc-upgrade.timer
+        - flatpak-update.timer
+        - NetworkManager.service
+        - greetd.service
+        - konica206-native.service
+        - konica206-vendor-data.service
+        - konica206-queue.service
+        - legacy-printer-app.service
+        - konica206uri-queue.service
+        - konica-cups-watch.service
+        - konica-cups-watch.timer
+        - epson-l3260-queue.service
+        - konica206-classic-queue.service
+        - samba-setup.service
+        - avahi-daemon.service
+        - smb.service
+        - nmb.service
+      masked:
+        # would pull AND reboot unattended; bootc-upgrade.timer only stages.
+        - bootc-fetch-apply-updates.timer
+        # Ironlake BIOS exposes no S3 and s2idle hangs.
+        - suspend.target
+        - hibernate.target
+        - hybrid-sleep.target
+        - suspend-then-hibernate.target
+    user:
+      enabled:
+        - flatpak-update.timer
+        - pipewire.service
+        - pipewire-pulse.service
+        - wireplumber.service
+
+  - type: signing
+
+  # No rpm-ostree in the final image (removes it if the base or BlueBuild brought it, fails if it stays).
+  - type: script
+    scripts:
+      - no-rpm-ostree.sh
+
+  # bootc's own sanity checks; keep last. If BlueBuild's additions make this
+  # fail, read the lint message before relaxing anything.
+  - type: script
+    snippets:
+      - "bootc container lint"
