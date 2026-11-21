@@ -144,11 +144,8 @@ modules:
     files:
       - source: system
         destination: /
-      # /usr/local is a symlink to /var/usrlocal in the BlueBuild base image;
-      # copying a directory named usr/local onto / would fail, so these two
-      # scripts are copied into the symlink target directly.
-      - source: local-bin
-        destination: /usr/local/bin
+      # /usr/local/bin comes from the konica-build stage output (COPY --link
+      # replaces that directory), including fuzzel-printjobs and konica-scan.
       - source: local-rpms
         destination: /usr/share/konica206-build/local-rpms
 
