@@ -267,14 +267,13 @@
       <!-- Middle-click titlebar: lower window -->
       <mousebind button="Middle" action="Press">
         <action name="Lower"/>
-        <action name="FocusToBottom"/>
         <action name="Unfocus"/>
       </mousebind>
       <!-- Scroll on titlebar: shade/unshade -->
-      <mousebind button="Up" action="Click">
+      <mousebind direction="Up" action="Scroll">
         <action name="Shade"/>
       </mousebind>
-      <mousebind button="Down" action="Click">
+      <mousebind direction="Down" action="Scroll">
         <action name="Unshade"/>
       </mousebind>
     </context>
