@@ -22,6 +22,7 @@ podman run --rm --privileged --pid=host \
     --security-opt label=type:unconfined_t \
     "$image" \
     bootc install to-disk --via-loopback --wipe \
+        --filesystem ext4 \
         --karg console=ttyS0,115200 --karg console=tty0 \
         /out/disk.img
 

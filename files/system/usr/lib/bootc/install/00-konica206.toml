@@ -1,0 +1,5 @@
+# Default filesystem type for `bootc install to-disk` (used by the BIOS smoke
+# test in tools/bios-boot-test.sh). Without this, to-disk fails with
+# "No install configuration found, and no filesystem specified".
+[install.filesystem.root]
+type = "ext4"
