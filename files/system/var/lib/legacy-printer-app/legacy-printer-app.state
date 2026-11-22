@@ -71,6 +71,4 @@ department-name-digit-3-default 1
 brightness-default 0
 contrast-default 0
 toner-save-default automatic-selection
-Job completed="1795329245" created="1795329243" format="application/pdf" id="2" impressions="1" name="398cb264-d190-4f6e-a854-7bef56ab5fe1.docx" processing="1795329243" state="9" username="torchio"
-Job completed="1795328709" created="1795328708" format="application/pdf" id="1" impressions="1" name="test225i.pdf" processing="1795328708" state="9" username="torchio"
 </Printer>

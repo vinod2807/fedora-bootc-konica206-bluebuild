@@ -1,8 +1,0 @@
-# Torchio declarative trust policy (host-local test).
-default deny
-network  ipp://127.0.0.1*   allow
-network  ipps://127.0.0.1*  allow
-network  ipp://localhost*   allow
-network  ipps://localhost*  allow
-network  ipp://192.168.1.19*  allow
-network  ipps://192.168.1.19*  allow
