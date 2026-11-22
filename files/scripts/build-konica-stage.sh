@@ -105,6 +105,12 @@ grep -qxF '*cupsBackSide: Rotated' "$ppd"
 install -d -m 0755 "$root/usr/share/konica206/ppd"
 cp "$ppd" "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
 grep -qxF '*cupsBackSide: Rotated' "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
+# Normal-backside copy for the PAPPL app's builtin renderer (upstream
+# konica206-native-alpine 30c0739): CUPS/legacy PPDs keep Rotated, but the
+# 206's duplexer binds long edge itself, so the app must not pre-rotate backs.
+sed 's/^\*cupsBackSide:.*/*cupsBackSide: Normal/' "$ppd" \
+    > "$root/usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd"
+grep -qxF '*cupsBackSide: Normal' "$root/usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd"
 
 gcc -O2 -std=gnu17 -Wall -Wextra \
     -o "$root/usr/local/libexec/konica-backend/usb" \

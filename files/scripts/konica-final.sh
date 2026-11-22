@@ -75,7 +75,8 @@ chmod 0644 /etc/greetd/config.toml /etc/pam.d/greetd /etc/systemd/zram-generator
     /usr/share/applications/fuzzel-printjobs.desktop \
     /usr/share/applications/konica-scan.desktop \
     /usr/share/ppd/konica206/konica206.ppd \
-    /usr/share/ppd/konica206/konica206-classic.ppd
+    /usr/share/ppd/konica206/konica206-classic.ppd \
+    /usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd
 
 # konica206-app.ppd = konica206.ppd + the PDF duplex shim filter (upstream: docs/DUPLEX-BACKSIDE.md).
 shim_line='*cupsFilter2: "application/pdf image/urf 5 /usr/libexec/konica206/pdf-duplex-shim"'
