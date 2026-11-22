@@ -19,7 +19,8 @@ repo; this BlueBuild image does **not** use it.
 
 > **Status: built, published and running on the target PC.** The GHCR image is produced by
 > the weekly BlueBuild workflow; the installed system tracks `:latest` and the stage-only
-> timer stages updates without rebooting on its own. The original repo is untouched.
+> timer stages updates without rebooting on its own. Legacy-BIOS boot is already proven on
+> the target i5-650, so no QEMU boot test runs on every build. The original repo is untouched.
 
 ## What tracks upstream and what this repo owns
 
@@ -104,10 +105,10 @@ rpm-ostree.
 | `files/scripts/konica-final.sh` | `konica` user, vendor-data symlink, generated `konica206-app.ppd`, chmods, dconf, cupsd sharing, Flathub remote, GRUB timeout |
 | `extras/` | NAPS2 Flatpak installer + scan profiles (run on the installed PC; not part of the image) |
 | `docs/` | Upstream printer docs (duplex backside, classic queue, vendor-data permissions, ...) |
-| `.github/workflows/build.yml` | BlueBuild action (weekly, push, PR, manual) + post-publish BIOS boot test |
+| `.github/workflows/build.yml` | BlueBuild action (weekly, push, PR, manual) with chunkah rechunk (64 layers); no automatic BIOS boot test |
 | `.github/workflows/build-iso.yml`, `.github/iso/` | Copied from upstream: Anaconda ISO via image-builder `bootc-generic-iso`, El Torito + SeaBIOS checks |
 | `tools/import-from-source.sh` | Re-import the printer/system side from upstream |
-| `tools/bios-boot-test.sh` | Install image to a virtual disk, boot under SeaBIOS |
+| `tools/bios-boot-test.sh` | Optional manual check only: install image to a virtual disk, boot under SeaBIOS (not run by CI) |
 
 ## First build
 
@@ -121,8 +122,9 @@ rpm-ostree.
 
 ## Install on the legacy-BIOS PC
 
-First run `sudo tools/bios-boot-test.sh ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest`
-(or let the workflow do it) on any Linux box with podman + QEMU.
+Optional manual check (not part of CI): `sudo tools/bios-boot-test.sh ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest`
+on any Linux box with podman + QEMU. The BIOS boot path is already proven on the target
+i5-650, so the workflow no longer runs this for every image.
 
 **A. Already on a BIOS bootc install (your i5-650):** keeps the existing bootloader.
 ```
@@ -142,8 +144,15 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
 
 ## Differences from the original, on purpose or not
 
-- **No chunkah rechunk pipeline.** The BlueBuild action has an optional `chunkah: true` input; try it only if
-  upgrade downloads turn out too large.
+- **Chunkah rechunk is enabled.** `chunkah: true` with `max_layers: 64` in
+  `.github/workflows/build.yml` rechunks the published image into content-based layers,
+  like the original repo's chunkah pipeline, so `bootc upgrade` downloads only the layers
+  whose content changed. This increases build time and runner disk usage; the action signs
+  the rechunked result.
+- **No automatic QEMU BIOS boot test.** The post-publish `bios-boot-test` job was removed:
+  the image already boots under legacy BIOS on the target PC, and `bootc rollback` covers
+  regressions. `tools/bios-boot-test.sh` stays as an optional manual tool;
+  `build-iso.yml` still uses QEMU SeaBIOS to check installer ISOs.
 - **No container smoke test** (package/unit/no-vendor-files assertions). Only upstream's `make check` tests gate the
   build; the BIOS boot job runs after publish and does not block it.
 - **Source SHAs** are stored in `/usr/share/konica206/{app,native,retrofit}-commit` and printed in the build log,
