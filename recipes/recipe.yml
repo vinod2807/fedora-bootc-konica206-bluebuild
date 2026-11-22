@@ -163,6 +163,14 @@ modules:
     src: /out/
     dest: /
 
+  # /usr/local/bin is replaced by the stage COPY above, so install the Torchio
+  # binaries after it. (The files module cannot copy a directory over the
+  # /usr/local symlink from the base image.)
+  - type: files
+    files:
+      - source: torchio-bin
+        destination: /usr/local/bin
+
   # konica user, vendor-data symlink, generated PPD, chmods, cupsd sharing, dconf, Flathub remote, GRUB timeout...
   - type: script
     scripts:
