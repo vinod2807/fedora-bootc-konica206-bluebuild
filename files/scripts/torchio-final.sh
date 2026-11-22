@@ -20,5 +20,7 @@ chmod 0644 /usr/lib/systemd/user/torchiod.service \
            /var/lib/legacy-printer-app/legacy-printer-app.state \
            /var/lib/legacy-printer-app/ppd/225igdi.ppd
 
+chmod 0644 /etc/cups/ppd/*.ppd 2>/dev/null || true
+
 test -x /usr/local/bin/torchiod
 test -x /usr/libexec/torchio-cups-proxy

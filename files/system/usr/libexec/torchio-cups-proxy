@@ -34,7 +34,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return None
         name = path.rsplit("/", 1)[-1][:-4]
         candidate = os.path.join(PPD_DIR, name + ".ppd")
-        return candidate if os.path.isfile(candidate) else None
+        return candidate if os.access(candidate, os.R_OK) else None
 
     def do_GET(self):
         ppd = self._ppd_file()
