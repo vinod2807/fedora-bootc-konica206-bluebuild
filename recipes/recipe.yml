@@ -168,6 +168,11 @@ modules:
     scripts:
       - konica-final.sh
 
+  # Torchio binaries, services, proxy, vendor 225i PPD and queue state.
+  - type: script
+    scripts:
+      - torchio-final.sh
+
   - type: systemd
     system:
       enabled:
@@ -179,16 +184,18 @@ modules:
         - konica206-vendor-data.service
         - konica206-queue.service
         - legacy-printer-app.service
-        - konica206uri-queue.service
-        - konica-cups-watch.service
-        - konica-cups-watch.timer
-        - epson-l3260-queue.service
-        - konica206-classic-queue.service
+        # CUPS is disabled: queues are hosted by PAPPL and fronted by Torchio.
+        # The CUPS queue-creation units below are intentionally NOT enabled.
         - samba-setup.service
         - avahi-daemon.service
         - smb.service
         - nmb.service
       masked:
+        # CUPS is masked: Torchio is the only print stack. PAPPL apps on :8000/:8001
+        # remain enabled; they are the backends Torchio talks to.
+        - cups.service
+        - cups.socket
+        - cups.path
         # would pull AND reboot unattended; bootc-upgrade.timer only stages.
         - bootc-fetch-apply-updates.timer
         # Ironlake BIOS exposes no S3 and s2idle hangs.
@@ -202,6 +209,10 @@ modules:
         - pipewire.service
         - pipewire-pulse.service
         - wireplumber.service
+        # Torchio per-user print stack (daemon, CUPS-socket proxy, queue setup).
+        - torchiod.service
+        - torchio-cups-proxy.service
+        - torchio-setup.service
 
   - type: signing
 

@@ -1,0 +1,3 @@
+[Environment]
+GTK_THEME=Greybird-dark
+CUPS_SERVER=/run/cups/cups.sock

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Ensure the Torchio destinations exist in a user's persistent state.
+# Host-local state (~/.local/state/torchio) survives bootc upgrades, so this is
+# normally a no-op; it makes a fresh deployment reproduce the same queues.
+set -u
+
+TORCHIO=/usr/local/bin/torchio
+RUNDIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+mkdir -p "$HOME/.config/torchio"
+if [ ! -f "$HOME/.config/torchio/trust.policy" ] && [ -f /etc/skel/.config/torchio/trust.policy ]; then
+    cp /etc/skel/.config/torchio/trust.policy "$HOME/.config/torchio/trust.policy"
+fi
+
+for _ in $(seq 1 30); do
+    [ -S "$RUNDIR/torchio/control.sock" ] && break
+    sleep 1
+done
+[ -S "$RUNDIR/torchio/control.sock" ] || exit 0
+
+have() {
+    "$TORCHIO" printer ls 2>/dev/null | awk '{print $1}' | sed 's/^\*//' | grep -Fxq "$1"
+}
+
+# Native PAPPL app: the real bizhub 206 over USB (default).
+if ! have konica206; then
+    "$TORCHIO" printer add konica206 ipp://127.0.0.1:8001/ipp/print/konica206 --default || true
+fi
+# Legacy PAPPL app: vendor 225i GDI filter driving the same USB printer.
+if ! have konica225i; then
+    "$TORCHIO" printer add konica225i ipp://127.0.0.1:8000/ipp/print/konica225i || true
+fi
+# Network Epson (best effort: it may be powered off at login).
+if ! have EPSON_L3260; then
+    "$TORCHIO" printer add EPSON_L3260 ipps://192.168.1.19/ipp/print || true
+fi

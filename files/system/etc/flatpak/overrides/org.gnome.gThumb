@@ -1,0 +1,5 @@
+[Context]
+sockets=cups;
+
+[Environment]
+CUPS_SERVER=/run/cups/cups.sock

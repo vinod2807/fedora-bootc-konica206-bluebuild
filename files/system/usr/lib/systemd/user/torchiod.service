@@ -1,0 +1,14 @@
+[Unit]
+Description=Torchio per-user print spooler (host-local test)
+After=dbus-broker.service
+
+[Service]
+Type=simple
+Environment=TORCHIO_TRUST_BACKEND=policy
+Environment=CUPS_SERVER=%t/torchio/cups.sock
+Environment=TORCHIO_CUPS_SOCKET=%t/torchio/cups.sock
+ExecStart=/opt/torchio/usr/bin/torchiod
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

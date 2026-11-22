@@ -1,0 +1,11 @@
+[Unit]
+Description=Ensure Torchio printer destinations
+After=torchiod.service
+Wants=torchiod.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ensure-torchio-printers
+
+[Install]
+WantedBy=default.target

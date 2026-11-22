@@ -1,0 +1,12 @@
+[Unit]
+Description=Torchio CUPS socket proxy (serves real PPD for GTK)
+After=torchiod.service
+Wants=torchiod.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/torchio/bin/torchio-cups-proxy
+Restart=always
+
+[Install]
+WantedBy=default.target
