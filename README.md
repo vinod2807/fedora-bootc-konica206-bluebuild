@@ -6,8 +6,20 @@ BlueBuild port of [`vinod2807/fedora-bootc-konica206`](https://github.com/vinod2
 
 Published image: `ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest`
 
-> **Status: untested draft.** Nothing here has been built or booted yet. Work through
-> "First build" and "Things to verify". The original repo is untouched.
+Base image lineage (verified from the published image's OCI labels — see "Base image" below):
+
+```
+ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest
+  └── ghcr.io/blue-build/base-images/fedora-base:latest
+        └── quay.io/fedora-ostree-desktops/base-atomic:45
+```
+
+`quay.io/fedora/fedora-bootc:latest` is the base used by the **original** Containerfile
+repo; this BlueBuild image does **not** use it.
+
+> **Status: built, published and running on the target PC.** The GHCR image is produced by
+> the weekly BlueBuild workflow; the installed system tracks `:latest` and the stage-only
+> timer stages updates without rebooting on its own. The original repo is untouched.
 
 ## What tracks upstream and what this repo owns
 
@@ -45,13 +57,39 @@ Added or fixed in this port:
 Not added on purpose: screen locker (upstream removed `swaylock`), Bluetooth, a graphical greeter.
 A graphical greeter (gtkgreet/regreet under cage) is possible later; I did not guess package names for it.
 
+## Base image
+
+The final image is built from `ghcr.io/blue-build/base-images/fedora-base:latest`, set in
+`recipes/recipe.yml` by `base-image: ghcr.io/blue-build/base-images/fedora-base` plus
+`image-version: latest`. That base image's own parent is
+`quay.io/fedora-ostree-desktops/base-atomic:45`. The `FROM` chain of the published image,
+read from its OCI labels, is therefore:
+
+| Image | Evidence |
+|---|---|
+| `ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest` | installed/tracked image (`bootc status`, `spec.image`) |
+| `ghcr.io/blue-build/base-images/fedora-base:latest` | `org.opencontainers.image.base.name` on the published image |
+| `quay.io/fedora-ostree-desktops/base-atomic:45` | `org.opencontainers.image.base.name` on `fedora-base` |
+
+`quay.io/fedora/fedora-bootc:latest` appears only in the **original** repo's Containerfile;
+it is not the base of this image. The printer **builder stage** does use
+`quay.io/fedora/fedora:latest` (a regular Fedora container, via `from:` in `recipe.yml`),
+but that is not the bootc base. Verify the current chain at any time with:
+
+```bash
+sudo skopeo inspect docker://ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest \
+  | grep -E 'base\.(name|digest)'
+sudo skopeo inspect docker://ghcr.io/blue-build/base-images/fedora-base:latest \
+  | grep -E 'base\.(name|digest)'
+```
+
 ## No rpm-ostree
 
-The base is `quay.io/fedora/fedora-bootc` (a bootc image, not an ostree-native Silverblue/Kinoite one) and the
-recipe uses only `dnf`/`files`/`script`/`copy`/`systemd`/`signing` modules, never BlueBuild's `rpm-ostree` module.
-Whether the base itself ships the `rpm-ostree` package is unconfirmed, so `files/scripts/no-rpm-ostree.sh` runs as the
-last build step: it removes rpm-ostree if present, fails the build if it cannot, and checks `bootc`/`bootupd` survive.
-`libostree` stays; it is bootc's storage backend, not rpm-ostree.
+The recipe uses only `dnf`/`files`/`script`/`copy`/`systemd`/`signing` modules, never
+BlueBuild's `rpm-ostree` module. `files/scripts/no-rpm-ostree.sh` still runs as the last
+build step: it removes rpm-ostree if the base ships it, fails the build if it cannot, and
+checks `bootc`/`bootupd` survive. `libostree` stays; it is bootc's storage backend, not
+rpm-ostree.
 
 ## Layout
 
@@ -112,8 +150,10 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
   not in OCI labels or the job summary.
 - **Moving refs:** printer repos build from `main` each run. Pin by setting `KONICA_*_REF` to a SHA in
   `files/scripts/build-konica-stage.sh`.
-- Fedora release train: `image-version: latest` plus `from: quay.io/fedora/fedora:latest` in the stage.
-  Pin both to the same number (e.g. `"44"`) to freeze.
+- Fedora release train: the bootc base follows `ghcr.io/blue-build/base-images/fedora-base`
+  with `image-version: latest` in `recipes/recipe.yml`; the printer builder stage uses
+  `from: quay.io/fedora/fedora:latest`. To freeze, pin `image-version` (e.g. `"45"`) and
+  change the stage's `from:` to the same number.
 - `mpv.desktop` from upstream is not shipped (mpv is a Flatpak there).
 - `etc/konica206/vendor-data.conf` points at `/var/home/vinod/konica-retrofit/...` on your machine.
 - Upstream dropped `evince`, `gparted` and `gnome-font-viewer` during its LXQt/GNOME phase; this recipe keeps them
@@ -121,8 +161,11 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
 
 ## Things to verify on the first build
 
-- Base: BlueBuild documents other bootc images as usable bases, but `quay.io/fedora/fedora-bootc` as a base is
-  untested here. BlueBuild adds files (CLI, nushell, cosign) that `bootc container lint` could object to.
+- Base: already verified in the published image — it is based on
+  `ghcr.io/blue-build/base-images/fedora-base:latest` (whose parent is
+  `quay.io/fedora-ostree-desktops/base-atomic:45`), and the image carries the
+  `containers.bootc=1` / `ostree.bootable=true` labels and boots on the target PC.
+  `quay.io/fedora/fedora-bootc` is not used here.
 - `files/scripts/` location for the `script` module, the `files` module inside a stage, and the `copy` of `/out/`
   into `/` follow the BlueBuild docs but have not been run.
 - Package names added in this port (`tumbler`, `thunar-volman`, `thunar-archive-plugin`, `system-config-printer`,
