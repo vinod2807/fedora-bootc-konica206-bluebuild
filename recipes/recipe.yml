@@ -109,7 +109,6 @@ modules:
         - gh
         - fastfetch
 
-<<<<<<< HEAD
   # Vendor RPMs not in Fedora/RPM Fusion. The script resolves the newest
   # upstream release on every build, so weekly rebuilds + the host's
   # bootc-upgrade.timer keep these apps current too. XnView/OnlyOffice publish
