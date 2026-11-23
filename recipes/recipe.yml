@@ -69,7 +69,6 @@ modules:
         - thunar-volman
         - thunar-archive-plugin
         - tumbler
-        - gthumb
         - evince
         - mousepad
         - xarchiver
@@ -140,6 +139,14 @@ modules:
         - sane-airscan
         - samba
         - samba-client
+    # The Flatpak versions of these apps are restored from the previous install;
+    # remove the Fedora repo duplicates (Firefox also comes from the base image).
+    remove:
+      auto-remove: false
+      packages:
+        - firefox
+        - firefox-langpacks
+        - gthumb
 
   # Static assets at their final absolute paths (see tools/import-from-source.sh)
   # plus the labwc desktop integration files this repo owns.
