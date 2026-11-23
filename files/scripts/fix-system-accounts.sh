@@ -27,6 +27,11 @@ for f in passwd group shadow gshadow; do
 done
 
 # Sanity check: required for DRM access and the graphical session.
+# getent is unreliable inside the build container because nss-altfiles is not
+# active there; check the canonical files directly instead.
 for g in video render input audio; do
-    getent group "$g" >/dev/null || { echo "missing group: $g" >&2; exit 1; }
+    if ! grep -q "^${g}:" /etc/group /usr/lib/group 2>/dev/null; then
+        echo "missing group: $g" >&2
+        exit 1
+    fi
 done
