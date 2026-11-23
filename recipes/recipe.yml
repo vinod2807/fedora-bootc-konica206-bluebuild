@@ -181,6 +181,14 @@ modules:
     user:
       enabled:
         - flatpak-update.timer
+      # Performance: no background indexing/activity tracking/Discover polls
+      # on this single-user, older desktop. KDE Connect is kept intentionally.
+      masked:
+        - kde-baloo.service
+        - kde-baloo-idle-monitor.service
+        - plasma-baloorunner.service
+        - plasma-kactivitymanagerd.service
+        - app-org.kde.discover.notifier@autostart.service
 
   - type: signing
 

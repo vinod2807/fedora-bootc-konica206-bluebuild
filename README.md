@@ -59,6 +59,19 @@ account has a different name, edit `User=` in that file on the installed system 
 repo before rebuilding). The account must already exist at first boot, otherwise SDDM falls
 back to the normal login screen.
 
+### Performance tuning
+
+To keep Plasma responsive on the older i5-650/Ironlake PC, the recipe masks these
+user services globally: `kde-baloo.service`, `kde-baloo-idle-monitor.service`
+(file indexing), `plasma-baloorunner.service`, `plasma-kactivitymanagerd.service`
+(Activities) and the Discover update notifier (updates come via bootc). KDE Connect
+is deliberately kept.
+
+`files/system/etc/skel/.config/{kdeglobals,kwinrc}` set instant animations and
+disable the blur effect for new users; existing users can apply the same changes
+immediately with `extras/scripts/tune-plasma-performance.sh` (log out and back in
+once for the KWin visual changes to take effect).
+
 ### Native RPMs instead of Flatpaks
 
 The old Flatpaks are replaced by native RPMs in the image:
@@ -132,6 +145,7 @@ rpm-ostree.
 | `files/scripts/vendor-rpms.sh` | Vendored Epson/sane RPMs (Epson scriptlets skipped) |
 | `files/scripts/install-vendor-apps.sh` | Installs NAPS2/ZapFast/XnView/ONLYOFFICE RPMs; resolves latest releases on every build |
 | `files/scripts/konica-final.sh` | `konica` user, vendor-data symlink, generated `konica206-app.ppd`, chmods, cupsd sharing, Flathub remote, GRUB timeout |
+| `extras/scripts/tune-plasma-performance.sh` | Applies runtime Plasma performance tweaks (mask background services, instant animations, no blur) |
 | `extras/scripts/migrate-firefox-flatpak-profile.sh` | Backs up the Flatpak Firefox profile and restores it into native Firefox; called by the uninstall script |
 | `extras/scripts/uninstall-replaced-flatpaks.sh` | Run on the installed PC: migrates Firefox, then removes Flatpaks now replaced by RPMs |
 | `extras/scripts/install-naps2-profiles.sh` | Run on the installed PC: scan profiles for the native NAPS2 RPM |
