@@ -1,8 +1,0 @@
-# System-wide KWin defaults for new Plasma users (user config wins).
-# Disable the blur effect: it is the most expensive default compositor effect
-# on older Intel GPUs such as the Ironlake i5-650.
-[Plugins]
-blurEnabled=false
-
-[Effect-Blur]
-Enabled=false

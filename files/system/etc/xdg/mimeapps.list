@@ -1,0 +1,17 @@
+# System-wide default applications. Browsers/office/media are Flatpaks and register
+# themselves when installed, so only the apps shipped in the image are listed here.
+[Default Applications]
+inode/directory=thunar.desktop
+application/pdf=org.gnome.Evince.desktop
+image/jpeg=org.gnome.gThumb.desktop
+image/png=org.gnome.gThumb.desktop
+image/gif=org.gnome.gThumb.desktop
+image/webp=org.gnome.gThumb.desktop
+image/tiff=org.gnome.gThumb.desktop
+image/svg+xml=org.gnome.gThumb.desktop
+text/plain=org.xfce.mousepad.desktop
+application/zip=xarchiver.desktop
+application/x-tar=xarchiver.desktop
+application/gzip=xarchiver.desktop
+application/x-xz=xarchiver.desktop
+application/x-7z-compressed=xarchiver.desktop

@@ -3,6 +3,11 @@
 # Port of the remaining RUN steps of the original Containerfile.
 set -euxo pipefail
 
+# xfce4-panel ships with Thunar's libxfce4panel dependency; hide its Settings
+# entries that labwc/sfwbar ignore. The package itself must stay.
+rm -f /usr/share/applications/panel-preferences.desktop \
+      /usr/share/applications/panel-desktop-handler.desktop
+
 # Dedicated unprivileged account for the printer application. USB access comes
 # from the udev rule (group lp, mode 0660), not from running as root.
 useradd --system --user-group --no-create-home \
@@ -30,14 +35,15 @@ chmod 0755 /usr/libexec/konica206/install-vendor-data /usr/libexec/konica206/ins
            /usr/libexec/konica206/pdf-duplex-shim \
            /usr/libexec/epson-l3260/ensure-queue \
            /usr/libexec/setup-samba
-chmod 0755 /usr/local/bin/konica-cups-watch.sh \
+chmod 0755 /usr/local/bin/konica-cups-watch.sh /usr/local/bin/fuzzel-printjobs \
            /usr/local/bin/konica-scan \
            /usr/local/sbin/check-wineps-route.sh \
            /usr/local/libexec/konica-backend/usb
-chmod 0644 /etc/systemd/zram-generator.conf \
+chmod 0755 /etc/xdg/labwc/autostart
+chmod 0644 /etc/greetd/config.toml /etc/pam.d/greetd /etc/systemd/zram-generator.conf \
     /etc/modprobe.d/90-konica206-usblp.conf /etc/samba/smb.conf \
     /etc/flatpak/overrides/com.stremio.Stremio /etc/cups/wineps.convs \
-    /etc/sddm.conf.d/autologin.conf \
+    /etc/xdg/labwc/menu.xml /etc/xdg/labwc/rc.xml \
     /etc/systemd/system/legacy-printer-app.service.d/90-konica206uri.conf \
     /usr/lib/systemd/system/konica206-native.service \
     /usr/lib/systemd/system/konica206-queue.service \
@@ -62,6 +68,11 @@ chmod 0644 /etc/systemd/zram-generator.conf \
     /usr/local/share/konica-retrofit/min-ar.ps \
     /usr/share/konica206/retrofit-commit \
     /usr/share/konica206/legacy-ppd/KonicaMinolta-206-fullbleed.ppd \
+    /usr/share/sfwbar/sfwbar.config \
+    /usr/share/applications/konica206-reboot.desktop \
+    /usr/share/applications/konica206-poweroff.desktop \
+    /usr/share/applications/weechat.desktop \
+    /usr/share/applications/fuzzel-printjobs.desktop \
     /usr/share/applications/konica-scan.desktop \
     /usr/share/ppd/konica206/konica206.ppd \
     /usr/share/ppd/konica206/konica206-classic.ppd \
@@ -78,6 +89,20 @@ update-desktop-database /usr/share/applications
 ln -sf /usr/libexec/konica206/install-vendor-data /usr/bin/konica206-install-vendor-data
 ln -sf /usr/libexec/konica206/preflight /usr/bin/konica206-preflight
 install -d -m 0755 /usr/share/konica206
+
+# --- labwc desktop integration -------------------------------------------------
+# System-wide dconf defaults (dark mode etc.) from /etc/dconf/db/local.d.
+dconf update
+# Default-app IDs in /etc/xdg/mimeapps.list must match installed .desktop files;
+# a wrong ID silently falls back to "ask". Warn (do not fail the build) if any is missing.
+for id in $(sed -n 's/^[^#=]*=\(.*\.desktop\)$/\1/p' /etc/xdg/mimeapps.list | sort -u); do
+    if [ ! -e "/usr/share/applications/$id" ]; then
+        echo "WARNING: mimeapps.list references missing /usr/share/applications/$id" >&2
+    fi
+done
+# Portal routing file must match XDG_CURRENT_DESKTOP from /etc/xdg/labwc/environment.
+test -f /etc/xdg/xdg-desktop-portal/labwc-portals.conf
+grep -qx 'XDG_CURRENT_DESKTOP=labwc' /etc/xdg/labwc/environment
 
 # Enable CUPS printer sharing at build time instead of at boot (a boot-time
 # `cupsctl --share-printers` makes cupsd restart and log a spurious failure).
@@ -108,9 +133,7 @@ curl --retry 3 --retry-delay 5 -fsSL \
     -o /etc/flatpak/remotes.d/flathub.flatpakrepo \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Graphical login by default (Kinoite's SDDM), with autologin into Plasma.
-test -f /usr/share/wayland-sessions/plasma.desktop
-grep -qx 'Session=plasma.desktop' /etc/sddm.conf.d/autologin.conf
+# Graphical login by default (greetd on VT1 -> tuigreet -> labwc).
 systemctl set-default graphical.target
 rm -f /etc/systemd/system/timers.target.wants/bootc-fetch-apply-updates.timer
 if [ -e /usr/lib/systemd/system/ecbd.service ]; then

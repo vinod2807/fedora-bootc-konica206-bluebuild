@@ -1,14 +1,13 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 #
-# BlueBuild port of vinod2807/fedora-bootc-konica206 -- KDE Plasma (Kinoite) edition.
+# BlueBuild port of vinod2807/fedora-bootc-konica206 -- labwc desktop edition.
 # Printer/system side tracks upstream (tools/import-from-source.sh); the desktop
-# itself is Fedora Kinoite's Plasma, so no compositor/panel/theme is shipped here.
-# Desktop apps that used to be Flatpaks are now native RPMs, including the
-# vendor packages installed in the second dnf module.
+# (labwc + sfwbar + foot + greetd/tuigreet) is owned by THIS repo, because upstream
+# moved to Cinnamon/LightDM and this image deliberately does not.
 ---
 name: fedora-bootc-konica206-bluebuild
-description: Fedora bootc - KDE Plasma (Kinoite) + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
-base-image: ghcr.io/blue-build/base-images/fedora-kinoite
+description: Fedora bootc - labwc desktop + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
+base-image: ghcr.io/blue-build/base-images/fedora-base
 # Follows the Fedora release train like the original (BASE_IMAGE=:latest).
 # To freeze, set e.g. "44" here AND change `from:` of the stage below.
 image-version: latest
@@ -16,7 +15,7 @@ platforms:
   - linux/amd64
 
 labels:
-  org.opencontainers.image.title: "Fedora bootc - Kinoite/Plasma + Konica bizhub 206 (BlueBuild)"
+  org.opencontainers.image.title: "Fedora bootc - labwc + Konica bizhub 206 (BlueBuild)"
   org.opencontainers.image.licenses: "NOASSERTION"
   # Printer source commit SHAs are recorded inside the image instead:
   #   /usr/share/konica206/{app,native,retrofit}-commit
@@ -40,97 +39,120 @@ modules:
     snippets:
       - "dnf -y upgrade --refresh"
 
-  # RPM Fusion adds proprietary media codecs (H.264/H.265/AAC, DVD/Blu-ray,
-  # GStreamer bad/ugly). Brave's repo supplies the Brave RPM. Repos are removed
-  # after this module; packages stay in the image.
+  # Packages first, files after: files such as /etc/samba/smb.conf must overwrite
+  # the packaged defaults (the original Containerfile copies them after dnf, too).
   - type: dnf
-    repos:
-      cleanup: true
-      nonfree: rpmfusion
-      files:
-        - https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
-      keys:
-        - https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
     install:
       install-weak-deps: false
-      skip-unavailable: true
       packages:
-        # --- former Flatpaks, now native RPMs ---
-        # Runtime deps for the RPM versions (Brave needs liberation-fonts;
-        # ZoiteChat/NAPS2 need GTK3), not guaranteed in a minimal Kinoite base.
-        - liberation-fonts
-        - gtk3
-        - repo: brave-browser
-          packages:
-            - brave-browser
-        - bottles
-        - gnome-calculator
+        # --- labwc desktop ---
+        - labwc
+        - sfwbar
+        - foot
+        - greetd
+        - tuigreet
+        - fuzzel
+        - swaybg
+        - swayidle
+        - brightnessctl
+        - mako
+        - grim
+        - slurp
+        - wl-clipboard
+        - wob
+        - wdisplays
+        - lxpolkit
+        - udiskie
+        - xorg-x11-server-Xwayland
+        # --- apps ---
+        - Thunar
+        - thunar-volman
+        - thunar-archive-plugin
+        - tumbler
         - gthumb
-        - gpodder
-        - libreoffice
-        # KDE Frameworks 6 VCL plugin: without it LO falls back to GTK3 and
-        # ignores Plasma's Breeze Dark theme (no system-wide dark mode).
-        - libreoffice-kf6
-        - libreoffice-langpack-en
-        - firefox
-        - mpv
-        - qbittorrent
-        - vlc
-        - pdfarranger # PdfCraft replacement
-        - calibre # Koodo Reader replacement
-        - flameshot # Impression replacement (Plasma also ships Spectacle)
-        - zoitechat
-        # --- proprietary media codecs (RPM Fusion) ---
-        - gstreamer1-plugins-bad-freeworld
-        - gstreamer1-plugins-ugly
-        - gstreamer1-libav
-        - libdvdcss
-        - libaacs
-        - libbdplus
-        - rpmfusion-free-appstream-data
-        - rpmfusion-nonfree-appstream-data
+        - evince
+        - mousepad
+        - xarchiver
+        - pavucontrol
+        - simple-scan
+        - weechat
+        - flatseal
+        - gparted
+        - gnome-font-viewer
+        - fastfetch
+        - gh
+        # --- integration: portals, keyring, session, network, audio, theme ---
+        - xdg-desktop-portal
+        - xdg-desktop-portal-gtk
+        - xdg-desktop-portal-wlr
+        - xdg-user-dirs
+        - xdg-utils
+        - gnome-keyring
+        - gnome-keyring-pam
+        - seahorse
+        - dbus-daemon
+        - dconf
+        - desktop-file-utils
+        - NetworkManager-wifi
+        - NetworkManager-openconnect
+        - NetworkManager-openvpn
+        - nm-connection-editor
+        - network-manager-applet
+        - wpa_supplicant
+        - pipewire
+        - pipewire-pulseaudio
+        - wireplumber
+        - adwaita-cursor-theme
+        - adwaita-icon-theme
+        - hicolor-icon-theme
+        - default-fonts
+        - libxkbcommon
+        - alsa-lib
+        - gvfs
+        - gvfs-fuse
+        - gvfs-gphoto2
+        - gvfs-mtp
+        - gvfs-smb
+        - fuse
+        - fuse-libs
+        - zip
+        - zram-generator
+        - flatpak
+        - mesa-dri-drivers
+        - mesa-libEGL
+        - mesa-vulkan-drivers
+        - vulkan-loader
+        - qt5-qtbase-gui
+        - usbutils
+        - policycoreutils-python-utils
         # --- printing / scanning / sharing ---
         - avahi
         - cups
         - cups-filters
         - ghostscript
         - system-config-printer
+        # Provides system-config-printer-applet + /etc/xdg/autostart/print-applet.desktop
+        # (print queue tray applet used by the previous XFCE install).
+        - system-config-printer-applet
         - legacy-printer-app
         - pappl
         - libusb1
         - sane-airscan
-        - simple-scan
         - samba
         - samba-client
-        # --- bootc / flatpak / tools ---
-        - zram-generator
-        - flatpak
-        - zip
-        - usbutils
-        - policycoreutils-python-utils
-        - qt5-qtbase-gui # Epson Printer Utility
-        - gh
-        - fastfetch
 
-  # Vendor RPMs not in Fedora/RPM Fusion. The script resolves the newest
-  # upstream release on every build, so weekly rebuilds + the host's
-  # bootc-upgrade.timer keep these apps current too. XnView/OnlyOffice publish
-  # moving "latest RPM" URLs; NAPS2/ZapFast versions come from the GitHub API.
-  - type: script
-    scripts:
-      - install-vendor-apps.sh
-
-  # Static assets at their final absolute paths (see tools/import-from-source.sh).
+  # Static assets at their final absolute paths (see tools/import-from-source.sh)
+  # plus the labwc desktop integration files this repo owns.
   - type: files
     files:
       - source: system
         destination: /
       # /usr/local/bin comes from the konica-build stage output (COPY --link
-      # replaces that directory), including konica-scan.
+      # replaces that directory), including fuzzel-printjobs and konica-scan.
       - source: local-rpms
         destination: /usr/share/konica206-build/local-rpms
 
-  # Vendored Epson Printer Utility + sane-ar206 RPMs.
+  # Vendored Epson Printer Utility + sane-ar206 RPMs (NAPS2/ZapFast are runtime Flatpaks upstream now).
   - type: script
     scripts:
       - vendor-rpms.sh
@@ -141,7 +163,7 @@ modules:
     src: /out/
     dest: /
 
-  # konica user, vendor-data symlink, generated PPD, chmods, cupsd sharing, Flathub remote, GRUB timeout...
+  # konica user, vendor-data symlink, generated PPD, chmods, cupsd sharing, dconf, Flathub remote, GRUB timeout...
   - type: script
     scripts:
       - konica-final.sh
@@ -152,6 +174,7 @@ modules:
         - bootc-upgrade.timer
         - flatpak-update.timer
         - NetworkManager.service
+        - greetd.service
         - konica206-native.service
         - konica206-vendor-data.service
         - konica206-queue.service
@@ -176,16 +199,9 @@ modules:
     user:
       enabled:
         - flatpak-update.timer
-      # Performance: no background indexing/activity tracking/Discover polls
-      # on this single-user, older desktop. KDE Connect is kept intentionally.
-      masked:
-        - kde-baloo.service
-        - kde-baloo-idle-monitor.service
-        - plasma-baloorunner.service
-        - plasma-kactivitymanagerd.service
-        - plasma-ksplash.service
-        - plasma-startupsound.service
-        - app-org.kde.discover.notifier@autostart.service
+        - pipewire.service
+        - pipewire-pulse.service
+        - wireplumber.service
 
   - type: signing
 
