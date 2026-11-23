@@ -38,37 +38,3 @@ brightness-default 0
 contrast-default 0
 toner-save-default automatic-selection
 </Printer>
-<Printer did="" driver="konica-minolta--225-i--user-added-en" id="3" name="konica225i" state="3" uri="cups:usb://KONICA%20MINOLTA/206?serial=A8A6041029423&interface=1">
-DNSSDName konica225i
-Contact
-MaxActiveJobs 0
-MaxCompletedJobs 100
-NextJobId 3
-ImpressionsCompleted 0
-identify-actions-default sound
-media-col-default bottom="423" left="423" length="29700" name="iso_a4_210x297mm" right="423" source="auto" top="423" type="plain" width="21000"
-media-col-ready0 bottom="423" left="423" length="29700" name="iso_a4_210x297mm" right="423" source="auto" top="423" type="plain" width="21000"
-orientation-requested-default none
-print-color-mode-default monochrome
-print-content-optimize-default auto
-print-quality-default normal
-print-scaling-default auto
-printer-resolution-default 600x600dpi
-sides-default one-sided
-bypass-default installed
-trays-default not-installed
-collate-default on
-output-method-default print
-duplex-unit-default not-installed
-password-digit-1-default 0
-password-digit-2-default 0
-password-digit-3-default 0
-password-digit-4-default 0
-account-track-default off
-department-name-digit-1-default 0
-department-name-digit-2-default 0
-department-name-digit-3-default 1
-brightness-default 0
-contrast-default 0
-toner-save-default automatic-selection
-</Printer>
