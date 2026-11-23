@@ -5,6 +5,15 @@
 # rebooting into the Kinoite build. Kept: OTPClient and Stremio (no RPM).
 set -euo pipefail
 
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Back up and restore the Firefox profile BEFORE --delete-data destroys the
+# Flatpak's private ~/.var/app directory. This script aborts on failure, so
+# no Flatpak is uninstalled until the migration has succeeded.
+if flatpak list --app --columns=application 2>/dev/null | grep -qx org.mozilla.firefox; then
+    "$here/migrate-firefox-flatpak-profile.sh"
+fi
+
 ids=(
   ai.storyteller.pdfcraft
   com.brave.Browser

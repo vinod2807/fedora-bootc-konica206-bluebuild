@@ -132,7 +132,8 @@ rpm-ostree.
 | `files/scripts/vendor-rpms.sh` | Vendored Epson/sane RPMs (Epson scriptlets skipped) |
 | `files/scripts/install-vendor-apps.sh` | Installs NAPS2/ZapFast/XnView/ONLYOFFICE RPMs; resolves latest releases on every build |
 | `files/scripts/konica-final.sh` | `konica` user, vendor-data symlink, generated `konica206-app.ppd`, chmods, cupsd sharing, Flathub remote, GRUB timeout |
-| `extras/scripts/uninstall-replaced-flatpaks.sh` | Run on the installed PC: removes Flatpaks now replaced by RPMs |
+| `extras/scripts/migrate-firefox-flatpak-profile.sh` | Backs up the Flatpak Firefox profile and restores it into native Firefox; called by the uninstall script |
+| `extras/scripts/uninstall-replaced-flatpaks.sh` | Run on the installed PC: migrates Firefox, then removes Flatpaks now replaced by RPMs |
 | `extras/scripts/install-naps2-profiles.sh` | Run on the installed PC: scan profiles for the native NAPS2 RPM |
 | `extras/flatpak/naps2/profiles.xml` | Epson/Konica scan profiles |
 | `docs/` | Upstream printer docs (duplex backside, classic queue, vendor-data permissions, ...) |
@@ -171,7 +172,9 @@ SDDM autologin works (Kinoite's SDDM logs in as that user).
 After install: `sudo konica206-install-vendor-data <path>` (or set `KONICA_VENDOR_SOURCE` in
 `/etc/konica206/vendor-data.conf`; the boot service installs it), `sudo konica206-preflight`, then
 `extras/scripts/install-naps2-profiles.sh` and `extras/scripts/uninstall-replaced-flatpaks.sh`
-from a checkout. Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
+from a checkout (the latter backs up/restores your Flatpak Firefox profile automatically before
+deleting Flatpak data; manual backups land in `~/.local/share/konica206/backups/`).
+Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
 
 ## Differences from the original, on purpose or not
 

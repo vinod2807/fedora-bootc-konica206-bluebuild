@@ -30,7 +30,8 @@ else:
 }
 
 install_url() { # URL [sha256] -- download and install an RPM; log its version
-    local url="$1" file="$tmp/$(basename "$url")"
+    local url="$1"
+    local file="$tmp/$(basename "$url")"
     curl --retry 3 --retry-delay 5 -fsSL -o "$file" "$url"
     if [ -n "${2:-}" ]; then
         echo "$2  $file" | sha256sum -c -
