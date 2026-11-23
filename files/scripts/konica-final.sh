@@ -37,6 +37,7 @@ chmod 0755 /usr/local/bin/konica-cups-watch.sh \
 chmod 0644 /etc/systemd/zram-generator.conf \
     /etc/modprobe.d/90-konica206-usblp.conf /etc/samba/smb.conf \
     /etc/flatpak/overrides/com.stremio.Stremio /etc/cups/wineps.convs \
+    /etc/sddm.conf.d/autologin.conf \
     /etc/systemd/system/legacy-printer-app.service.d/90-konica206uri.conf \
     /usr/lib/systemd/system/konica206-native.service \
     /usr/lib/systemd/system/konica206-queue.service \
@@ -107,7 +108,9 @@ curl --retry 3 --retry-delay 5 -fsSL \
     -o /etc/flatpak/remotes.d/flathub.flatpakrepo \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Graphical login by default (Kinoite's SDDM).
+# Graphical login by default (Kinoite's SDDM), with autologin into Plasma.
+test -f /usr/share/wayland-sessions/plasma.desktop
+grep -qx 'Session=plasma.desktop' /etc/sddm.conf.d/autologin.conf
 systemctl set-default graphical.target
 rm -f /etc/systemd/system/timers.target.wants/bootc-fetch-apply-updates.timer
 if [ -e /usr/lib/systemd/system/ecbd.service ]; then

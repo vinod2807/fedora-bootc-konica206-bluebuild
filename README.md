@@ -46,8 +46,18 @@ PipeWire/WirePlumber, NetworkManager with `plasma-nm`, Dolphin, Okular, Kate, Gw
 Spectacle, KDE Connect and the rest of the KDE app set.
 
 This repo adds **no** compositor, panel, theme, portal, autostart or default-application
-overrides. The only desktop-adjacent file it ships is `usr/share/applications/konica-scan.desktop`
-(a scanner launcher) plus the `system-config-printer` package for CUPS print queues.
+overrides. The only desktop-adjacent files it ships are `usr/share/applications/konica-scan.desktop`
+(a scanner launcher) and `etc/sddm.conf.d/autologin.conf`, plus the `system-config-printer`
+package for CUPS print queues.
+
+### Autologin
+
+`etc/sddm.conf.d/autologin.conf` makes SDDM log in `vinod` automatically into the Plasma
+Wayland session. Fedora 45 Kinoite ships that session as `plasma.desktop` (verified with
+`dnf repoquery -l plasma-workspace`); the build checks that the file exists. If the installed
+account has a different name, edit `User=` in that file on the installed system (or in the
+repo before rebuilding). The account must already exist at first boot, otherwise SDDM falls
+back to the normal login screen.
 
 ### Native RPMs instead of Flatpaks
 
@@ -155,7 +165,8 @@ Roll back from the 10 s GRUB menu or `sudo bootc rollback`. Check `bootc status`
 Signature enforcement: see the BlueBuild cosign docs before relying on it.
 
 **B. Fresh install:** run **Actions → build-iso**, write the ISO to USB, boot in legacy BIOS/CSM mode
-on wired Ethernet, create your user + root password in Anaconda (Kinoite's SDDM logs in as that user).
+on wired Ethernet, create your user + root password in Anaconda — use `vinod` as the username so
+SDDM autologin works (Kinoite's SDDM logs in as that user).
 
 After install: `sudo konica206-install-vendor-data <path>` (or set `KONICA_VENDOR_SOURCE` in
 `/etc/konica206/vendor-data.conf`; the boot service installs it), `sudo konica206-preflight`, then
