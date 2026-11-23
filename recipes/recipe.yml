@@ -68,6 +68,9 @@ modules:
         - gthumb
         - gpodder
         - libreoffice
+        # KDE Frameworks 6 VCL plugin: without it LO falls back to GTK3 and
+        # ignores Plasma's Breeze Dark theme (no system-wide dark mode).
+        - libreoffice-kf6
         - libreoffice-langpack-en
         - firefox
         - mpv
