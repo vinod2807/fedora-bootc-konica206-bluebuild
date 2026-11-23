@@ -2,9 +2,8 @@
 # Vendored RPMs committed under files/local-rpms/ (Epson Printer Utility, sane-ar206).
 # Port of the "Epson" RUN steps of the upstream Containerfile.
 #
-# NAPS2 and ZapFast are NOT installed here any more: upstream moved them to Flatpak
-# at runtime (Flatpak's /var/lib/flatpak is not part of a bootc image).
-# See extras/scripts/install-naps2-flatpak.
+# NAPS2, ZapFast, XnView and ONLYOFFICE are installed from upstream RPMs by
+# files/scripts/install-vendor-apps.sh (with automatic version resolution).
 set -euxo pipefail
 
 # Scriptlets are skipped on purpose: the Epson RPM's %post launches the ecbd daemon

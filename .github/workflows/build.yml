@@ -31,7 +31,7 @@ jobs:
           pr_event_number: ${{ github.event.number }}
           maximize_build_space: true
           # Leave use_cache off: the stage and scripts fetch moving upstream
-          # sources (printer repos, NAPS2/ZapFast), which a layer cache would hide.
+          # sources (printer repos, vendor app RPMs), which a layer cache would hide.
           # Rechunk like the original repo's chunkah pipeline so bootc upgrade only
           # downloads the layers whose content changed. The action passes --max-layers
           # to chunkah and signs the rechunked result.
