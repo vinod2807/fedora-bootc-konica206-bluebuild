@@ -7,12 +7,11 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Back up and restore the Firefox profile BEFORE --delete-data destroys the
-# Flatpak's private ~/.var/app directory. This script aborts on failure, so
-# no Flatpak is uninstalled until the migration has succeeded.
-if flatpak list --app --columns=application 2>/dev/null | grep -qx org.mozilla.firefox; then
-    "$here/migrate-firefox-flatpak-profile.sh"
-fi
+# Back up and restore the Firefox profile BEFORE --delete-data destroys any
+# leftover data. Always call it: the profile may live in ~/.config even when
+# the Flatpak is already gone. It aborts on failure, so no Flatpak is removed
+# until migration has succeeded.
+"$here/migrate-firefox-flatpak-profile.sh"
 
 ids=(
   ai.storyteller.pdfcraft

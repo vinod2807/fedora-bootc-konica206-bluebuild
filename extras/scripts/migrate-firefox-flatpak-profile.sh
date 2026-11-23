@@ -8,11 +8,21 @@ APP_ID=org.mozilla.firefox
 backup_root="${XDG_DATA_HOME:-$HOME/.local/share}/konica206/backups"
 stamp="$(date +%Y%m%d-%H%M%S)"
 
-# Flatpak redirects HOME into ~/.var/app/<id> (some builds use the data/ dir).
+dest="$HOME/.mozilla/firefox"
+
+# Flatpak Firefox has used several profile locations over time: the private
+# app home, its data/config subdirs, and (on this machine) the host XDG config
+# dir. Check them all; never treat the native destination itself as a source.
 src=""
 for candidate in \
     "$HOME/.var/app/$APP_ID/.mozilla/firefox" \
-    "$HOME/.var/app/$APP_ID/data/.mozilla/firefox"; do
+    "$HOME/.var/app/$APP_ID/data/.mozilla/firefox" \
+    "$HOME/.var/app/$APP_ID/config/mozilla/firefox" \
+    "$HOME/.config/mozilla/firefox" \
+    "$HOME/.mozilla/firefox"; do
+    if [ "$candidate" = "$dest" ]; then
+        continue
+    fi
     if [ -d "$candidate" ]; then
         src="$candidate"
         break
@@ -20,7 +30,7 @@ for candidate in \
 done
 
 if [ -z "$src" ]; then
-    printf 'No Flatpak Firefox profile found under ~/.var/app/%s; nothing to migrate.\n' "$APP_ID" >&2
+    printf 'No Flatpak Firefox profile found; nothing to migrate.\n' >&2
     exit 0
 fi
 
@@ -29,7 +39,6 @@ backup="$backup_root/firefox-flatpak-$stamp"
 cp -a "$src" "$backup"
 printf 'Flatpak Firefox profile backed up to: %s\n' "$backup"
 
-dest="$HOME/.mozilla/firefox"
 if [ -e "$dest" ] && [ ! -d "$dest" ]; then
     printf 'Refusing to migrate: %s exists but is not a directory.\n' "$dest" >&2
     exit 1
