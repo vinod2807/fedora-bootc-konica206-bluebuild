@@ -52,12 +52,13 @@ package for CUPS print queues.
 
 ### Autologin
 
-`etc/sddm.conf.d/autologin.conf` makes SDDM log in `vinod` automatically into the Plasma
-Wayland session. Fedora 45 Kinoite ships that session as `plasma.desktop` (verified with
-`dnf repoquery -l plasma-workspace`); the build checks that the file exists. If the installed
-account has a different name, edit `User=` in that file on the installed system (or in the
-repo before rebuilding). The account must already exist at first boot, otherwise SDDM falls
-back to the normal login screen.
+Fedora 45 Kinoite actually uses **Plasma Login Manager** (`plasmalogin`) as its display
+manager. `etc/plasmalogin.conf.d/autologin.conf` logs `vinod` in automatically into the
+Plasma Wayland session (`plasma.desktop`); `etc/sddm.conf.d/autologin.conf` carries the
+same settings for SDDM compatibility. Fedora ships that session file (the build checks it
+exists). If the installed account has a different name, edit `User=` in both files on the
+installed system (or in the repo before rebuilding). The account must already exist at
+first boot, otherwise the greeter is shown.
 
 ### Performance tuning
 
