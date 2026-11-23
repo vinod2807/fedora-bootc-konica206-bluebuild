@@ -8,11 +8,12 @@ set -euxo pipefail
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
-# latest_github_rpm OWNER REPO FILENAME_SUFFIX
+# latest_github_rpm OWNER REPO FILENAME_SUFFIX FALLBACK_URL
 # Prints the browser_download_url of the matching asset in the newest release.
+# The GitHub API is rate-limited in CI, so fall back to a pinned known-good RPM.
 latest_github_rpm() {
-    local owner="$1" repo="$2" suffix="$3"
-    curl --retry 3 -fsSL \
+    local owner="$1" repo="$2" suffix="$3" fallback="$4" url=""
+    url="$(curl --retry 3 -fsSL \
         "https://api.github.com/repos/${owner}/${repo}/releases/latest" \
         | python3 -c '
 import json, sys
@@ -26,8 +27,16 @@ for asset in data.get("assets", []):
 else:
     tag = data.get("tag_name", "?")
     sys.exit("no RPM asset ending in " + suffix + " in " + str(tag))
-' "$suffix"
+' "$suffix")" || url=""
+    if [ -z "$url" ]; then
+        echo "WARNING: could not resolve latest ${owner}/${repo}; using pinned fallback" >&2
+        url="$fallback"
+    fi
+    printf '%s\n' "$url"
 }
+
+NAPS2_FALLBACK=https://github.com/cyanfish/naps2/releases/download/v8.6.1/naps2-8.6.1-linux-x64.rpm
+ZAPFAST_FALLBACK=https://github.com/crmne/zapfast/releases/download/v0.21.3/zapfast-0.21.3-1.x86_64.rpm
 
 install_url() { # URL [sha256] -- download and install an RPM; log its version
     local url="$1"
@@ -41,8 +50,8 @@ install_url() { # URL [sha256] -- download and install an RPM; log its version
 }
 
 # NAPS2 and ZapFast: resolve the newest release from GitHub.
-install_url "$(latest_github_rpm cyanfish naps2 -linux-x64.rpm)"
-install_url "$(latest_github_rpm crmne zapfast -1.x86_64.rpm)"
+install_url "$(latest_github_rpm cyanfish naps2 -linux-x64.rpm "$NAPS2_FALLBACK")"
+install_url "$(latest_github_rpm crmne zapfast -1.x86_64.rpm "$ZAPFAST_FALLBACK")"
 
 # XnView MP and ONLYOFFICE publish stable "latest RPM" URLs.
 install_url https://download.xnview.com/XnView_MP-linux.x86_64.rpm
