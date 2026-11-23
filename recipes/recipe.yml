@@ -120,14 +120,6 @@ modules:
     scripts:
       - install-vendor-apps.sh
 
-  # bootc base images leave /etc/passwd and /etc/group with only the accounts
-  # created during the build while /etc/shadow/gshadow and /usr/lib/passwd/group
-  # are complete. Run sysusers at build time and sync the canonical copies so
-  # first boot does not prune the shadow entries needed by PAM/autologin.
-  - type: script
-    scripts:
-      - fix-system-accounts.sh
-
   # Static assets at their final absolute paths (see tools/import-from-source.sh).
   - type: files
     files:
