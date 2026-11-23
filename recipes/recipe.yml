@@ -56,6 +56,10 @@ modules:
       skip-unavailable: true
       packages:
         # --- former Flatpaks, now native RPMs ---
+        # Runtime deps for the RPM versions (Brave needs liberation-fonts;
+        # ZoiteChat/NAPS2 need GTK3), not guaranteed in a minimal Kinoite base.
+        - liberation-fonts
+        - gtk3
         - repo: brave-browser
           packages:
             - brave-browser
