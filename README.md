@@ -64,8 +64,10 @@ back to the normal login screen.
 To keep Plasma responsive on the older i5-650/Ironlake PC, the recipe masks these
 user services globally: `kde-baloo.service`, `kde-baloo-idle-monitor.service`
 (file indexing), `plasma-baloorunner.service`, `plasma-kactivitymanagerd.service`
-(Activities) and the Discover update notifier (updates come via bootc). KDE Connect
-is deliberately kept.
+(Activities), the startup splash/sound, and the Discover update notifier (updates come
+via bootc). KDE Connect is deliberately kept. `etc/sysctl.d/99-plasma-performance.conf`
+sets `vm.swappiness=10` and `vm.vfs_cache_pressure=50` to reduce swap churn and keep
+the file cache warm.
 
 `files/system/etc/skel/.config/{kdeglobals,kwinrc}` set instant animations and
 disable the blur effect for new users; existing users can apply the same changes

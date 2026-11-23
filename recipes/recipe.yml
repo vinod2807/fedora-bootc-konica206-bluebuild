@@ -188,6 +188,8 @@ modules:
         - kde-baloo-idle-monitor.service
         - plasma-baloorunner.service
         - plasma-kactivitymanagerd.service
+        - plasma-ksplash.service
+        - plasma-startupsound.service
         - app-org.kde.discover.notifier@autostart.service
 
   - type: signing

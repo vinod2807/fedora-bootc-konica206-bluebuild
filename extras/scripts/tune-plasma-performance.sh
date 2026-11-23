@@ -9,6 +9,8 @@ units=(
   kde-baloo-idle-monitor.service
   plasma-baloorunner.service
   plasma-kactivitymanagerd.service
+  plasma-ksplash.service
+  plasma-startupsound.service
   app-org.kde.discover.notifier@autostart.service
 )
 
@@ -29,6 +31,9 @@ fi
 kwriteconfig6 --file kdeglobals --group KDE --key AnimationDurationFactor 0
 kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled false
 kwriteconfig6 --file kwinrc --group Effect-Blur --key Enabled false
+
+# Lower swap churn / keep file cache (baked into the image via sysctl.d too).
+sudo -n sysctl -w vm.swappiness=10 vm.vfs_cache_pressure=50 >/dev/null 2>&1 || true
 
 printf '\nDone. Log out and back in once for the KWin visual changes to fully apply.\n'
 printf 'Remaining background services:\n'
