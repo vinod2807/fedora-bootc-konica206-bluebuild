@@ -12,3 +12,7 @@ gtk-theme='Adwaita-dark'
 icon-theme='Adwaita'
 cursor-theme='Adwaita'
 cursor-size=24
+
+# Traditional window controls on the top right of every titlebar.
+[org/mate/Marco/general]
+button-layout=':minimize,maximize,close'

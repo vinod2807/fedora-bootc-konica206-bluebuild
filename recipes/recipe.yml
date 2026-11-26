@@ -54,6 +54,10 @@ modules:
         - mate-settings-daemon
         - mate-panel
         - mate-desktop
+        # Marco is MATE's X11 window manager. Without it mate-session logs
+        # "Unable to find provider 'marco'" and windows have no titlebar
+        # decorations (hence no minimize/maximize/close buttons).
+        - marco
         - mate-control-center
         - mate-notification-daemon
         - mate-polkit
