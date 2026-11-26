@@ -58,6 +58,10 @@ modules:
         - lxqt-admin
         - lxqt-themes
         - lxqt-themes-fedora
+        # Qt platform theme: applies the LXQt palette (etc/lxqt/lxqt.conf) to
+        # every Qt app. Without it QT_QPA_PLATFORMTHEME=lxqt falls back to the
+        # light Fusion default, which made the LXQt session look white.
+        - lxqt-qtplugin
         - pcmanfm-qt
         - qterminal
         - featherpad

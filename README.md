@@ -54,6 +54,8 @@ Added or fixed in this port:
 | Miriway shell components and Meta-key shortcuts (files, terminal, editor, runner, workspaces) | `usr/share/lxqt/wayland/miriway/miriway-shell.config` |
 | Portal routing for `XDG_CURRENT_DESKTOP=LXQt:miriway:mir`: GTK portal (file chooser, **print dialog**, dark-mode setting) + wlr (screenshot, screen share) | `etc/xdg/xdg-desktop-portal/lxqt-portals.conf` |
 | System-wide dark theme defaults for GTK3/GTK4/dconf (no autostart race) | `etc/gtk-3.0`, `etc/gtk-4.0`, `etc/dconf/{profile,db/local.d}` + `dconf update` at build |
+| LXQt/Qt dark theme, icon theme and palette (Qt ignores the GTK/dconf settings) | `etc/lxqt/lxqt.conf` + `lxqt-qtplugin` (recipe) |
+| Dark PCManFM-Qt desktop wallpaper instead of Fedora's bright day wallpaper | `usr/share/pcmanfm-qt/lxqt/settings.conf` |
 | LXQt default applications (folders, PDF, images, text, archives) | `etc/xdg/mimeapps.list` (build warns if an ID does not exist) |
 | LXQt apps: PCManFM-Qt, QTerminal, FeatherPad, LXImage-Qt, LXQt Archiver | recipe |
 | Printer GUI + zenity-based print-job tooling | `system-config-printer`, `lxqt-printjobs`, `konica-scan` desktop entries |
