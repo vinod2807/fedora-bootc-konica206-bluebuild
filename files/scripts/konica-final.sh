@@ -32,8 +32,12 @@ chmod 0755 /usr/libexec/konica206/install-vendor-data /usr/libexec/konica206/ins
            /usr/libexec/setup-samba
 chmod 0755 /usr/local/bin/konica-cups-watch.sh /usr/local/bin/mate-printjobs \
            /usr/local/bin/konica-scan \
+           /usr/local/bin/konica-rotate-backside.py \
+           /usr/local/bin/konica-native-legacy-duplex \
            /usr/local/sbin/check-wineps-route.sh \
            /usr/local/libexec/konica-backend/usb
+test -x /usr/local/bin/konica-rotate-backside.py
+test -x /usr/local/bin/konica-native-legacy-duplex
 chmod 0644 /etc/lightdm/lightdm.conf.d/90-konica-mate-autologin.conf \
     /etc/systemd/zram-generator.conf \
     /etc/modprobe.d/90-konica206-usblp.conf /etc/samba/smb.conf \

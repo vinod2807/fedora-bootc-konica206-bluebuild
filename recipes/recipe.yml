@@ -144,6 +144,8 @@ modules:
         - cups
         - cups-filters
         - ghostscript
+        # Runtime for the konica206uri duplex back-side raster rotation helper.
+        - python3
         - system-config-printer
         # Provides system-config-printer-applet + /etc/xdg/autostart/print-applet.desktop
         # (print queue tray applet; MATE's panel picks up status icons).
