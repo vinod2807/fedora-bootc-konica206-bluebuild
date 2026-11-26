@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# lxqt-printjobs - view and cancel CUPS print jobs; restart a print queue.
+# mate-printjobs - view and cancel CUPS print jobs; restart a print queue.
 #
-# LXQt/Miriway reimplementation of the Alpine script ~/bin/rofi-printjobs.
+# MATE reimplementation of the Alpine script ~/bin/rofi-printjobs.
 # The interactive picker uses zenity (a plain GTK dialog) so no launcher such
 # as fuzzel/rofi is needed in this image. Notifications go through
-# lxqt-notificationd via notify-send, with a stderr fallback.
+# mate-notification-daemon via notify-send, with a stderr fallback.
 #
-#   lxqt-printjobs          interactive menu of active jobs; select one to cancel
-#   lxqt-printjobs list     print active jobs to stdout
-#   lxqt-printjobs JOBID    cancel JOBID directly
-#   lxqt-printjobs cancel-all           cancel every queued job
-#   lxqt-printjobs restart [PRINTER]    flush that printer's jobs (all printers
+#   mate-printjobs          interactive menu of active jobs; select one to cancel
+#   mate-printjobs list     print active jobs to stdout
+#   mate-printjobs JOBID    cancel JOBID directly
+#   mate-printjobs cancel-all           cancel every queued job
+#   mate-printjobs restart [PRINTER]    flush that printer's jobs (all printers
 #                                      when omitted), then re-enable the queue
-#   lxqt-printjobs help                 this text
+#   mate-printjobs help                 this text
 set -euo pipefail
 
 list_jobs() {
@@ -115,7 +115,7 @@ show_menu() {
 
 usage() {
   cat <<'EOF'
-Usage: lxqt-printjobs [list|JOBID|cancel-all|restart [PRINTER]|help]
+Usage: mate-printjobs [list|JOBID|cancel-all|restart [PRINTER]|help]
   (no args)          interactive menu of active jobs; select one to cancel
   list               print active jobs to stdout
   JOBID              cancel JOBID directly

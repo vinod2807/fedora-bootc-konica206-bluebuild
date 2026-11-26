@@ -74,7 +74,7 @@ chmod 0755 "$root/usr/local/bin/konica-cups-watch.sh" \
 # The two desktop helpers must ship in the stage output: the final image gets
 # /usr/local/bin from `COPY --from=konica-build --link /out/ /`, which replaces
 # anything copied there by an earlier files module.
-install -m 0755 "$IN/lxqt-printjobs" "$IN/konica-scan" "$root/usr/local/bin/"
+install -m 0755 "$IN/mate-printjobs" "$IN/konica-scan" "$root/usr/local/bin/"
 
 install -m 0644 retrofit/tests/min-ar.ps "$root/usr/local/share/konica-retrofit/min-ar.ps"
 install -m 0644 retrofit/konica-cups-watch.service retrofit/konica-cups-watch.timer \

@@ -1,8 +1,9 @@
 # fedora-bootc-konica206-bluebuild
 
 BlueBuild port of [`vinod2807/fedora-bootc-konica206`](https://github.com/vinod2807/fedora-bootc-konica206),
-**LXQt/Miriway edition**: Fedora bootc, LXQt + Miriway, greetd/tuigreet, Konica Minolta bizhub 206
-(PAPPL + native C11 encoder + legacy `konica206uri` queues), Epson L3260 driverless queue, Samba.
+**MATE/Xorg edition**: Fedora bootc, MATE on Xorg with LightDM (`lightdm-gtk` greeter, autologin as
+`vinod`), Konica Minolta bizhub 206 (PAPPL + native C11 encoder + legacy `konica206uri` queues),
+Epson L3260 driverless queue, Samba.
 
 Published image: `ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest`
 
@@ -28,42 +29,41 @@ Imported from upstream commit `98ffb65` (2026-11-19) by `tools/import-from-sourc
 printer stack, queue scripts and services, `pdf-duplex-shim` + `konica206-app.ppd`, rotated-backside PPD,
 `konica206-vendor-data.service`, `konica206-classic.ppd`, Samba, bootc kargs, update timers, docs, the BIOS ISO pipeline.
 
-**Deliberately not taken from upstream:** the move to **Cinnamon + LightDM + Slick Greeter autologin** (and
-the earlier GNOME/detours). This image uses **LXQt on Miriway with greetd/tuigreet**.
-`tools/import-from-source.sh` never touches the desktop files below, so re-importing cannot bring Cinnamon back.
-The old labwc/XFCE shell (labwc, sfwbar, Foot, fuzzel, Thunar, mousepad, xarchiver, …
-and their configs) is removed from the recipe and the image.
+**Deliberately not taken from upstream:** the move to **Cinnamon** (and the earlier GNOME/detours).
+This image uses **MATE on Xorg with LightDM**. `tools/import-from-source.sh` never touches the desktop
+files below, so re-importing cannot bring Cinnamon back. The old labwc/XFCE/LXQt shells
+(labwc, sfwbar, Foot, fuzzel, Miriway, PCManFM-Qt, Thunar, mousepad, xarchiver, …
+and their configs) are removed from the recipe and the image.
 
-Owned by this repo (desktop): `etc/lxqt/*`, `etc/greetd/*`, `etc/pam.d/greetd`,
-`usr/share/lxqt/wayland/miriway/*`, `usr/share/applications/lxqt-printjobs.desktop`,
-`konica206-{reboot,poweroff}.desktop`, plus the integration files added in this port (below).
+Owned by this repo (desktop): `etc/lightdm/*`, `usr/lib/tmpfiles.d/50-mate-lightdm.conf`,
+`usr/share/applications/mate-printjobs.desktop`, `konica206-{reboot,poweroff}.desktop`,
+plus the integration files added in this port (below).
 
-## Desktop integration (LXQt + Miriway)
+## Desktop integration (MATE on Xorg + LightDM)
 
-`greetd` autologins as `vinod` and runs `/usr/bin/startlxqtwayland`. Fedora's LXQt Wayland
-session launcher reads `etc/lxqt/session.conf` (`compositor=miriway`) and starts
-`lxqt-miriway-session`, which brings up `miriway-shell` and then `lxqt-session`.
-Shell components (panel, notification daemon, policykit agent, wallpaper) are configured in
-`usr/share/lxqt/wayland/miriway/miriway-shell.config` and copied to the user config on first login.
+`lightdm.service` starts the GTK greeter and autologins as `vinod`, launching the packaged
+`mate.desktop` session (`mate-session` + Marco + `mate-panel`) on Xorg. This is the supported
+MATE session on Fedora: MATE has no production Wayland session, and Polo (a third-party
+Wayland compositor released Nov 2026) is not packaged in Fedora and needs Wayland-enabled
+rebuilds of packages such as `mate-panel`.
 
 Added or fixed in this port:
 
 | What | Where |
 |---|---|
-| Compositor pinned to Miriway so a base-image change cannot fall back to labwc | `etc/lxqt/session.conf` |
-| Miriway shell components and Meta-key shortcuts (files, terminal, editor, runner, workspaces) | `usr/share/lxqt/wayland/miriway/miriway-shell.config` |
-| Portal routing for `XDG_CURRENT_DESKTOP=LXQt:miriway:mir`: GTK portal (file chooser, **print dialog**, dark-mode setting) + wlr (screenshot, screen share) | `etc/xdg/xdg-desktop-portal/lxqt-portals.conf` |
-| System-wide dark theme defaults for GTK3/GTK4/dconf (no autostart race) | `etc/gtk-3.0`, `etc/gtk-4.0`, `etc/dconf/{profile,db/local.d}` + `dconf update` at build |
-| LXQt/Qt dark theme, icon theme and palette (Qt ignores the GTK/dconf settings) | `etc/lxqt/lxqt.conf` + `lxqt-qtplugin` (recipe) |
-| Dark PCManFM-Qt desktop wallpaper instead of Fedora's bright day wallpaper | `usr/share/pcmanfm-qt/lxqt/settings.conf` |
-| LXQt default applications (folders, PDF, images, text, archives) | `etc/xdg/mimeapps.list` (build warns if an ID does not exist) |
-| LXQt apps: PCManFM-Qt, QTerminal, FeatherPad, LXImage-Qt, LXQt Archiver | recipe |
-| Printer GUI + zenity-based print-job tooling | `system-config-printer`, `lxqt-printjobs`, `konica-scan` desktop entries |
+| MATE on Xorg, LightDM GTK greeter and autologin as `vinod` | recipe (`lightdm`, `lightdm-gtk`, `xorg-x11-server-Xorg`) + `etc/lightdm/lightdm.conf.d/90-konica-mate-autologin.conf` |
+| `pam_selinux ... open nottys` fix so autologin gets a user context instead of `xdm_t` | `files/scripts/konica-final.sh` (patch of packaged `/usr/lib/pam.d/lightdm-autologin`) |
+| Greeter runtime dirs recreated/relabelled at boot (bootc images have no SELinux xattrs) | `usr/lib/tmpfiles.d/50-mate-lightdm.conf` |
+| Portal routing for `XDG_CURRENT_DESKTOP=MATE`: GTK portal (file chooser, **print dialog**, dark-mode setting) | `etc/xdg/xdg-desktop-portal/mate-portals.conf` |
+| System-wide dark theme defaults for GTK3/GTK4/dconf and MATE (no autostart race) | `etc/gtk-3.0`, `etc/gtk-4.0`, `etc/dconf/{profile,db/local.d/00-mate-defaults}` + `dconf update` at build |
+| MATE default applications (folders, PDF, images, text, archives) | `etc/xdg/mimeapps.list` (build warns if an ID does not exist) |
+| MATE apps: Caja, Pluma, Atril, Eog, Engrampa, MATE Terminal | recipe |
+| Printer GUI + zenity-based print-job tooling | `system-config-printer`, `mate-printjobs`, `konica-scan` desktop entries |
 | `wireplumber` explicit (as upstream now does) | recipe |
 | Keyring manager (Passwords and Keys) for the gnome-keyring secrets store | `seahorse`, entry in the Settings menu |
 
-Not added on purpose: Bluetooth, a graphical greeter beyond tuigreet, and a screen locker
-(lock/suspend are intentionally absent on this Ironlake PC).
+Not added on purpose: Bluetooth, a second Wayland session, `mate-screensaver`, and screen
+locker/suspend (lock/suspend are intentionally absent on this Ironlake PC).
 
 ## Base image
 
@@ -142,7 +142,7 @@ Roll back from the 10 s GRUB menu or `sudo bootc rollback`. Check `bootc status`
 Signature enforcement: see the BlueBuild cosign docs before relying on it.
 
 **B. Fresh install:** run **Actions → build-iso**, write the ISO to USB, boot in legacy BIOS/CSM mode
-on wired Ethernet, create your user + root password in Anaconda (greetd/tuigreet logs in as that user).
+on wired Ethernet, create your user + root password in Anaconda (LightDM autologins as that user).
 
 After install: `sudo konica206-install-vendor-data <path>` (or set `KONICA_VENDOR_SOURCE` in
 `/etc/konica206/vendor-data.conf`; the boot service installs it), `sudo konica206-preflight`, then
@@ -173,7 +173,7 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
 - `mpv.desktop` from upstream is not shipped (mpv is a Flatpak there).
 - `etc/konica206/vendor-data.conf` points at `/var/home/vinod/konica-retrofit/...` on your machine.
 - `evince` and `gparted` are kept from the earlier image; `gnome-font-viewer` and the Thunar/XFCE
-  app stack were dropped in the LXQt swap.
+  app stack were dropped in the LXQt swap, and the LXQt/Miriway stack was dropped in the MATE swap.
 
 ## Things to verify on the first build
 
@@ -184,9 +184,10 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
   `quay.io/fedora/fedora-bootc` is not used here.
 - `files/scripts/` location for the `script` module, the `files` module inside a stage, and the `copy` of `/out/`
   into `/` follow the BlueBuild docs but have not been run.
-- LXQt/Miriway package names (`lxqt-session`, `lxqt-panel`, `miriway`, `miriway-session`,
-  `lxqt-miriway-session`, `lxqt-wayland-session-default-compositor-miriway`, `zenity`, …) were
-  checked against Fedora 45 before the switch; recheck when the base moves to a newer release.
+- MATE/LightDM package names (`mate-session-manager`, `mate-panel`, `lightdm`, `lightdm-gtk`,
+  `mate-desktop-configs`, `mozo`, `xorg-x11-server-Xorg`, …) were checked against Fedora 45
+  before the switch; recheck when the base moves to a newer release. Fedora 45 has no
+  `mate-desktop-environment` meta package, so the apps are listed explicitly.
 - `sane-ar206` is an **fc44** RPM; if the base moves to Fedora 45 the install may fail until upstream rebuilds it.
 - `qt5-qtbase-gui` is kept for the Epson utility (upstream's new package list dropped it).
 - Check the build log for `WARNING: mimeapps.list references missing ...` and fix any ID.

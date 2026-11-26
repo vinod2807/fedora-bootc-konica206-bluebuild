@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 #
-# BlueBuild port of vinod2807/fedora-bootc-konica206 -- LXQt/Miriway desktop edition.
+# BlueBuild port of vinod2807/fedora-bootc-konica206 -- MATE/Xorg desktop edition.
 # Printer/system side tracks upstream (tools/import-from-source.sh); the desktop
-# (LXQt + Miriway + greetd/tuigreet) is owned by THIS repo, because upstream moved
-# to Cinnamon/LightDM and this image deliberately does not.
+# (MATE on Xorg + LightDM/lightdm-gtk autologin) is owned by THIS repo, because
+# upstream moved to Cinnamon and this image deliberately does not.
 ---
 name: fedora-bootc-konica206-bluebuild
-description: Fedora bootc - LXQt/Miriway desktop + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
+description: Fedora bootc - MATE/Xorg desktop + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
 base-image: ghcr.io/blue-build/base-images/fedora-base
 # Follows the Fedora release train like the original (BASE_IMAGE=:latest).
 # To freeze, set e.g. "44" here AND change `from:` of the stage below.
@@ -15,7 +15,7 @@ platforms:
   - linux/amd64
 
 labels:
-  org.opencontainers.image.title: "Fedora bootc - LXQt/Miriway + Konica bizhub 206 (BlueBuild)"
+  org.opencontainers.image.title: "Fedora bootc - MATE/Xorg + Konica bizhub 206 (BlueBuild)"
   org.opencontainers.image.licenses: "NOASSERTION"
   # Printer source commit SHAs are recorded inside the image instead:
   #   /usr/share/konica206/{app,native,retrofit}-commit
@@ -45,44 +45,45 @@ modules:
     install:
       install-weak-deps: false
       packages:
-        # --- LXQt desktop, composited by Miriway ---
-        - lxqt-session
-        - lxqt-wayland-session
-        - lxqt-panel
-        - lxqt-runner
-        - lxqt-config
-        - lxqt-notificationd
-        - lxqt-policykit
-        - lxqt-powermanagement
-        - lxqt-about
-        - lxqt-admin
-        - lxqt-themes
-        - lxqt-themes-fedora
-        # Qt platform theme: applies the LXQt palette (etc/lxqt/lxqt.conf) to
-        # every Qt app. Without it QT_QPA_PLATFORMTHEME=lxqt falls back to the
-        # light Fusion default, which made the LXQt session look white.
-        - lxqt-qtplugin
-        - pcmanfm-qt
-        - qterminal
-        - featherpad
-        - lximage-qt
-        - lxqt-archiver
-        - miriway
-        - miriway-session
-        - lxqt-miriway-session
-        - lxqt-wayland-session-default-compositor-miriway
-        - greetd
-        - tuigreet
-        - swaybg
-        - swayidle
+        # --- MATE desktop on Xorg ---
+        # Fedora 45 ships no mate-desktop-environment meta package, and
+        # install-weak-deps is false, so the session, panel and apps are listed
+        # explicitly. MATE has no production Wayland session (Polo is not
+        # packaged in Fedora), so use the supported Xorg session with LightDM.
+        - mate-session-manager
+        - mate-settings-daemon
+        - mate-panel
+        - mate-desktop
+        - mate-control-center
+        - mate-notification-daemon
+        - mate-polkit
+        - mate-power-manager
+        - mate-media
+        - mate-utils
+        - mate-system-monitor
+        - mate-applets
+        - mate-backgrounds
+        - mate-icon-theme
+        - mate-themes
+        - mate-menus
+        - mate-desktop-configs
+        - mozo
+        - mate-terminal
+        - caja
+        - pluma
+        - atril
+        - engrampa
+        - eog
+        # --- display manager: LightDM + GTK greeter, autologin as vinod ---
+        - lightdm
+        - lightdm-gtk
+        - accountsservice
+        - xorg-x11-server-Xorg
+        - xorg-x11-xinit
         - brightnessctl
         - udiskie
-        - grim
-        - slurp
-        - wl-clipboard
         - zenity
-        - xorg-x11-server-Xwayland
-        # --- apps kept (non-LXQt desktop shell pieces are gone) ---
+        # --- apps kept (non-MATE desktop shell pieces are gone) ---
         - evince
         - pavucontrol
         - simple-scan
@@ -94,7 +95,6 @@ modules:
         # --- integration: portals, keyring, session, network, audio, theme ---
         - xdg-desktop-portal
         - xdg-desktop-portal-gtk
-        - xdg-desktop-portal-wlr
         - xdg-user-dirs
         - xdg-utils
         - gnome-keyring
@@ -142,7 +142,7 @@ modules:
         - ghostscript
         - system-config-printer
         # Provides system-config-printer-applet + /etc/xdg/autostart/print-applet.desktop
-        # (print queue tray applet; LXQt's panel picks up SNI tray icons).
+        # (print queue tray applet; MATE's panel picks up status icons).
         - system-config-printer-applet
         - legacy-printer-app
         - pappl
@@ -152,7 +152,7 @@ modules:
         - samba-client
     # The Flatpak versions of these apps are restored from the previous install;
     # remove the Fedora repo duplicates (Firefox also comes from the base image).
-    # The rest are leftovers from the old labwc/XFCE shell that the LXQt swap
+    # The rest are leftovers from the old labwc/XFCE/LXQt shells that MATE
     # replaces; auto-remove stays off so printer dependencies survive.
     remove:
       auto-remove: false
@@ -172,15 +172,46 @@ modules:
         - mousepad
         - xarchiver
         - gnome-font-viewer
+        # LXQt/Miriway/greetd stack from the previous image.
+        - lxqt-session
+        - lxqt-wayland-session
+        - lxqt-panel
+        - lxqt-runner
+        - lxqt-config
+        - lxqt-notificationd
+        - lxqt-policykit
+        - lxqt-powermanagement
+        - lxqt-about
+        - lxqt-admin
+        - lxqt-themes
+        - lxqt-themes-fedora
+        - lxqt-qtplugin
+        - pcmanfm-qt
+        - qterminal
+        - featherpad
+        - lximage-qt
+        - lxqt-archiver
+        - miriway
+        - miriway-session
+        - lxqt-miriway-session
+        - lxqt-wayland-session-default-compositor-miriway
+        - greetd
+        - tuigreet
+        - swaybg
+        - swayidle
+        - grim
+        - slurp
+        - wl-clipboard
+        - xorg-x11-server-Xwayland
 
   # Static assets at their final absolute paths (see tools/import-from-source.sh)
-  # plus the LXQt/Miriway desktop integration files this repo owns.
+  # plus the MATE/LightDM desktop integration files this repo owns.
   - type: files
     files:
       - source: system
         destination: /
       # /usr/local/bin comes from the konica-build stage output (COPY --link
-      # replaces that directory), including lxqt-printjobs and konica-scan.
+      # replaces that directory), including mate-printjobs and konica-scan.
       - source: local-rpms
         destination: /usr/share/konica206-build/local-rpms
 
@@ -206,7 +237,7 @@ modules:
         - bootc-upgrade.timer
         - flatpak-update.timer
         - NetworkManager.service
-        - greetd.service
+        - lightdm.service
         - konica206-native.service
         - konica206-vendor-data.service
         - konica206-queue.service

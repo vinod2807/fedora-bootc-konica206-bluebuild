@@ -33,7 +33,7 @@ application still uses libcups’ raster API and libusb, both from Fedora RPMs.
 | legacy queue helper | `/usr/libexec/konica206/ensure-legacy-queue` |
 | Wine/Adobe PS MIME rule | `/etc/cups/wineps.convs` |
 | Wine/Adobe PS guard | `/usr/local/sbin/check-wineps-route.sh` |
-| print-job manager | `/usr/local/bin/lxqt-printjobs` (LXQt app menu, zenity picker) |
+| print-job manager | `/usr/local/bin/mate-printjobs` (MATE app menu, zenity picker) |
 | build commit stamps | `/usr/share/konica206/{app,native,retrofit}-commit` |
 
 The app runs as the system user `konica`, group `konica`, supplementary group

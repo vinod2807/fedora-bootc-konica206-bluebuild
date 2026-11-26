@@ -5,10 +5,11 @@
 #
 # With no argument the source repo is cloned into a temp directory.
 #
-# Deliberately NOT imported (this repo owns them; upstream moved to Cinnamon/LightDM,
-# this image stays on LXQt + Miriway + greetd/tuigreet):
-#   etc/lxqt/*, etc/greetd/*, etc/pam.d/greetd, usr/share/lxqt/wayland/miriway/*,
-#   konica206-{reboot,poweroff}.desktop, lxqt-printjobs, LXQt portal/theme/mime defaults.
+# Deliberately NOT imported (this repo owns them; upstream moved to Cinnamon,
+# this image stays on MATE on Xorg with LightDM):
+#   etc/lightdm/*, usr/lib/tmpfiles.d/50-mate-lightdm.conf,
+#   usr/share/applications/mate-printjobs.desktop, mate-printjobs,
+#   MATE portal/theme/mime defaults, konica206-{reboot,poweroff}.desktop.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -62,8 +63,8 @@ put scripts/ensure-classic-queue  usr/libexec/konica206/ensure-classic-queue 075
 put scripts/pdf-duplex-shim       usr/libexec/konica206/pdf-duplex-shim 0755
 put scripts/ensure-epson-queue    usr/libexec/epson-l3260/ensure-queue 0755
 put scripts/setup-samba           usr/libexec/setup-samba 0755
-# fuzzel-printjobs is replaced by this repo's zenity-based lxqt-printjobs
-# (files/stage-inputs/lxqt-printjobs), installed by build-konica-stage.sh.
+# fuzzel-printjobs is replaced by this repo's zenity-based mate-printjobs
+# (files/stage-inputs/mate-printjobs), installed by build-konica-stage.sh.
 put scripts/konica-scan           usr/local/bin/konica-scan 0755
 
 # --- samba, flatpak overrides, PPDs ---
@@ -74,9 +75,12 @@ put ppd/konica206-classic.ppd     usr/share/ppd/konica206/konica206-classic.ppd 
 # konica206-app.ppd is generated at build time (see files/scripts/konica-final.sh).
 
 # --- printing / scanning launchers (desktop-neutral; mpv.desktop is skipped: mpv is a Flatpak) ---
-# The Print Jobs launcher is repo-owned (usr/share/applications/lxqt-printjobs.desktop).
+# The Print Jobs launcher is repo-owned (usr/share/applications/mate-printjobs.desktop).
 put desktop/applications/konica-scan.desktop      usr/share/applications/konica-scan.desktop 0644
 put desktop/applications/weechat.desktop          usr/share/applications/weechat.desktop 0644
+# Upstream launches WeeChat in QTerminal; this image uses MATE Terminal.
+sed -i 's/^Exec=qterminal -e weechat/Exec=mate-terminal -e weechat/' \
+    "$here/files/system/usr/share/applications/weechat.desktop"
 
 # --- inputs consumed by the konica-build stage (assembled/patched there) ---
 stage="$here/files/stage-inputs"
@@ -107,9 +111,9 @@ install -D -m 0644 "$src/flatpak/naps2/profiles.xml"    "$here/extras/flatpak/na
 #     automatically targets this repo's GHCR image) ---
 rm -rf "$here/docs"; mkdir -p "$here/docs" "$here/.github/iso" "$here/.github/workflows"
 cp -a "$src"/docs/. "$here/docs/"
-# This repo swapped the labwc launcher for the LXQt one; keep the doc accurate
+# This repo swapped the labwc launcher for the MATE one; keep the doc accurate
 # across re-imports instead of letting upstream's path come back.
-sed -i 's#`/usr/local/bin/fuzzel-printjobs` (launcher + `W-e` keybind)#`/usr/local/bin/lxqt-printjobs` (LXQt app menu, zenity picker)#' \
+sed -i 's#`/usr/local/bin/fuzzel-printjobs` (launcher + `W-e` keybind)#`/usr/local/bin/mate-printjobs` (MATE app menu, zenity picker)#' \
     "$here/docs/PRINTER.md"
 cp -a "$src/.github/iso/." "$here/.github/iso/"
 cp -a "$src/.github/workflows/build-iso.yml" "$here/.github/workflows/build-iso.yml"

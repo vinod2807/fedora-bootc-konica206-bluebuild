@@ -1,17 +1,17 @@
 # System-wide default applications. Browsers/office/media are Flatpaks and register
 # themselves when installed, so only the apps shipped in the image are listed here.
 [Default Applications]
-inode/directory=pcmanfm-qt.desktop
-application/pdf=org.gnome.Evince.desktop
-image/jpeg=lximage-qt.desktop
-image/png=lximage-qt.desktop
-image/gif=lximage-qt.desktop
-image/webp=lximage-qt.desktop
-image/tiff=lximage-qt.desktop
-image/svg+xml=lximage-qt.desktop
-text/plain=featherpad.desktop
-application/zip=lxqt-archiver.desktop
-application/x-tar=lxqt-archiver.desktop
-application/gzip=lxqt-archiver.desktop
-application/x-xz=lxqt-archiver.desktop
-application/x-7z-compressed=lxqt-archiver.desktop
+inode/directory=caja.desktop
+application/pdf=atril.desktop
+image/jpeg=org.gnome.eog.desktop
+image/png=org.gnome.eog.desktop
+image/gif=org.gnome.eog.desktop
+image/webp=org.gnome.eog.desktop
+image/tiff=org.gnome.eog.desktop
+image/svg+xml=org.gnome.eog.desktop
+text/plain=pluma.desktop
+application/zip=engrampa.desktop
+application/x-tar=engrampa.desktop
+application/gzip=engrampa.desktop
+application/x-xz=engrampa.desktop
+application/x-7z-compressed=engrampa.desktop

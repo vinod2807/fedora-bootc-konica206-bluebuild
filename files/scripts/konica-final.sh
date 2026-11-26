@@ -30,15 +30,16 @@ chmod 0755 /usr/libexec/konica206/install-vendor-data /usr/libexec/konica206/ins
            /usr/libexec/konica206/pdf-duplex-shim \
            /usr/libexec/epson-l3260/ensure-queue \
            /usr/libexec/setup-samba
-chmod 0755 /usr/local/bin/konica-cups-watch.sh /usr/local/bin/lxqt-printjobs \
+chmod 0755 /usr/local/bin/konica-cups-watch.sh /usr/local/bin/mate-printjobs \
            /usr/local/bin/konica-scan \
            /usr/local/sbin/check-wineps-route.sh \
            /usr/local/libexec/konica-backend/usb
-chmod 0644 /etc/greetd/config.toml /etc/pam.d/greetd /etc/systemd/zram-generator.conf \
+chmod 0644 /etc/lightdm/lightdm.conf.d/90-konica-mate-autologin.conf \
+    /etc/systemd/zram-generator.conf \
     /etc/modprobe.d/90-konica206-usblp.conf /etc/samba/smb.conf \
     /etc/flatpak/overrides/com.stremio.Stremio /etc/cups/wineps.convs \
-    /etc/lxqt/session.conf /etc/xdg/xdg-desktop-portal/lxqt-portals.conf \
-    /usr/share/lxqt/wayland/miriway/miriway-shell.config \
+    /etc/xdg/xdg-desktop-portal/mate-portals.conf \
+    /usr/lib/tmpfiles.d/50-mate-lightdm.conf \
     /etc/systemd/system/legacy-printer-app.service.d/90-konica206uri.conf \
     /usr/lib/systemd/system/konica206-native.service \
     /usr/lib/systemd/system/konica206-queue.service \
@@ -66,7 +67,7 @@ chmod 0644 /etc/greetd/config.toml /etc/pam.d/greetd /etc/systemd/zram-generator
     /usr/share/applications/konica206-reboot.desktop \
     /usr/share/applications/konica206-poweroff.desktop \
     /usr/share/applications/weechat.desktop \
-    /usr/share/applications/lxqt-printjobs.desktop \
+    /usr/share/applications/mate-printjobs.desktop \
     /usr/share/applications/konica-scan.desktop \
     /usr/share/ppd/konica206/konica206.ppd \
     /usr/share/ppd/konica206/konica206-classic.ppd \
@@ -84,7 +85,7 @@ ln -sf /usr/libexec/konica206/install-vendor-data /usr/bin/konica206-install-ven
 ln -sf /usr/libexec/konica206/preflight /usr/bin/konica206-preflight
 install -d -m 0755 /usr/share/konica206
 
-# --- LXQt/Miriway desktop integration -------------------------------------------
+# --- MATE on Xorg / LightDM desktop integration ----------------------------------
 # System-wide dconf defaults (dark mode etc.) from /etc/dconf/db/local.d.
 dconf update
 # Default-app IDs in /etc/xdg/mimeapps.list must match installed .desktop files;
@@ -94,12 +95,25 @@ for id in $(sed -n 's/^[^#=]*=\(.*\.desktop\)$/\1/p' /etc/xdg/mimeapps.list | so
         echo "WARNING: mimeapps.list references missing /usr/share/applications/$id" >&2
     fi
 done
-# The compositor is pinned system-wide and the session/portal plumbing exists.
-grep -qx 'compositor=miriway' /etc/lxqt/session.conf
-test -x /usr/bin/startlxqtwayland
-test -x /usr/bin/miriway-shell
-test -f /etc/xdg/xdg-desktop-portal/lxqt-portals.conf
-test -f /usr/share/lxqt/wayland/miriway/miriway-shell.config
+# The MATE session, greeter, autologin drop-in and portal plumbing must exist.
+test -f /usr/share/xsessions/mate.desktop
+test -x /usr/bin/mate-session
+test -x /usr/bin/lightdm
+test -x /usr/bin/lightdm-gtk-greeter
+dm_conf=/etc/lightdm/lightdm.conf.d/90-konica-mate-autologin.conf
+test -f "$dm_conf"
+grep -qx 'autologin-user=vinod' "$dm_conf"
+grep -qx 'user-session=mate' "$dm_conf"
+grep -qx 'greeter-session=lightdm-gtk-greeter' "$dm_conf"
+test -f /etc/xdg/xdg-desktop-portal/mate-portals.conf
+# LightDM sets PAM_TTY=/dev/tty/7 (not a device path), so pam_selinux's tty
+# lookup fails with ENOTDIR. Without a user context the autologin session runs
+# as xdm_t and Xsession's ssh-agent cannot create its socket in ~/.ssh, so the
+# session exits 255 and LightDM falls back to the greeter. "nottys" makes
+# pam_selinux use the user's default context instead (fix proven upstream).
+pam=/usr/lib/pam.d/lightdm-autologin
+sed -i -E 's/^(session[[:space:]]+required[[:space:]]+pam_selinux\.so open)$/\1 nottys/' "$pam"
+grep -qE '^session[[:space:]]+required[[:space:]]+pam_selinux\.so open nottys$' "$pam"
 
 # Enable CUPS printer sharing at build time instead of at boot (a boot-time
 # `cupsctl --share-printers` makes cupsd restart and log a spurious failure).
@@ -130,7 +144,7 @@ curl --retry 3 --retry-delay 5 -fsSL \
     -o /etc/flatpak/remotes.d/flathub.flatpakrepo \
     https://dl.flathub.org/repo/flathub.flatpakrepo
 
-# Graphical login by default (greetd on VT1 -> tuigreet -> startlxqtwayland -> Miriway).
+# Graphical login by default (LightDM GTK greeter -> autologin vinod -> MATE on Xorg).
 systemctl set-default graphical.target
 rm -f /etc/systemd/system/timers.target.wants/bootc-fetch-apply-updates.timer
 if [ -e /usr/lib/systemd/system/ecbd.service ]; then
