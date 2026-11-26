@@ -1,0 +1,10 @@
+# System-wide defaults for the LXQt/Miriway session. Compiled by `dconf update`
+# at build time. Gives every app (including D-Bus-activated and Flatpak/portal
+# ones) dark mode from the first frame, instead of relying on a session
+# autostart racing app launch.
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+gtk-theme='Adwaita-dark'
+icon-theme='Adwaita'
+cursor-theme='Adwaita'
+cursor-size=24

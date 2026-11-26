@@ -5,10 +5,12 @@ vt = 1
 
 [default_session]
 # Fallback greeter (after logout, or if autologin fails).
-command = "tuigreet --time --remember --cmd /usr/bin/labwc"
+# Fedora's startlxqtwayland reads /etc/xdg/lxqt/session.conf and launches
+# LXQt on Miriway (via lxqt-miriway-session).
+command = "tuigreet --time --remember --cmd /usr/bin/startlxqtwayland"
 user = "greetd"
 
 [initial_session]
 # Autologin as vinod on first boot since boot.
-command = "/usr/bin/labwc"
+command = "/usr/bin/startlxqtwayland"
 user = "vinod"
