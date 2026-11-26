@@ -1,7 +1,7 @@
 # fedora-bootc-konica206-bluebuild
 
 BlueBuild port of [`vinod2807/fedora-bootc-konica206`](https://github.com/vinod2807/fedora-bootc-konica206),
-**labwc edition**: Fedora bootc, labwc + sfwbar + Foot, greetd/tuigreet, Konica Minolta bizhub 206
+**LXQt/Miriway edition**: Fedora bootc, LXQt + Miriway, greetd/tuigreet, Konica Minolta bizhub 206
 (PAPPL + native C11 encoder + legacy `konica206uri` queues), Epson L3260 driverless queue, Samba.
 
 Published image: `ghcr.io/vinod2807/fedora-bootc-konica206-bluebuild:latest`
@@ -29,34 +29,39 @@ printer stack, queue scripts and services, `pdf-duplex-shim` + `konica206-app.pp
 `konica206-vendor-data.service`, `konica206-classic.ppd`, Samba, bootc kargs, update timers, docs, the BIOS ISO pipeline.
 
 **Deliberately not taken from upstream:** the move to **Cinnamon + LightDM + Slick Greeter autologin** (and
-the earlier GNOME/LXQt detours). This image stays on **labwc + greetd/tuigreet**. `tools/import-from-source.sh`
-never touches the desktop files below, so re-importing cannot bring Cinnamon back.
+the earlier GNOME/detours). This image uses **LXQt on Miriway with greetd/tuigreet**.
+`tools/import-from-source.sh` never touches the desktop files below, so re-importing cannot bring Cinnamon back.
+The old labwc/XFCE shell (labwc, sfwbar, Foot, fuzzel, Thunar, mousepad, xarchiver, …
+and their configs) is removed from the recipe and the image.
 
-Owned by this repo (desktop): `etc/xdg/labwc/*`, `etc/greetd/*`, `etc/pam.d/greetd`, `usr/share/sfwbar/*`,
+Owned by this repo (desktop): `etc/lxqt/*`, `etc/greetd/*`, `etc/pam.d/greetd`,
+`usr/share/lxqt/wayland/miriway/*`, `usr/share/applications/lxqt-printjobs.desktop`,
 `konica206-{reboot,poweroff}.desktop`, plus the integration files added in this port (below).
 
-## Desktop integration (labwc)
+## Desktop integration (LXQt + Miriway)
 
-Already in the session (`etc/xdg/labwc/autostart`): sfwbar panel, swaybg, mako notifications, udiskie automount,
-nm-applet, swayidle (dim only; lock/suspend are intentionally absent on this Ironlake PC), D-Bus activation
-environment, gnome-keyring secrets, lxpolkit agent, xdg-user-dirs, Thunar daemon.
+`greetd` autologins as `vinod` and runs `/usr/bin/startlxqtwayland`. Fedora's LXQt Wayland
+session launcher reads `etc/lxqt/session.conf` (`compositor=miriway`) and starts
+`lxqt-miriway-session`, which brings up `miriway-shell` and then `lxqt-session`.
+Shell components (panel, notification daemon, policykit agent, wallpaper) are configured in
+`usr/share/lxqt/wayland/miriway/miriway-shell.config` and copied to the user config on first login.
 
 Added or fixed in this port:
 
 | What | Where |
 |---|---|
-| Portal routing for labwc: GTK portal (file chooser, **print dialog**, dark-mode setting) + wlr (screenshot, screen share) | `etc/xdg/xdg-desktop-portal/labwc-portals.conf` |
+| Compositor pinned to Miriway so a base-image change cannot fall back to labwc | `etc/lxqt/session.conf` |
+| Miriway shell components and Meta-key shortcuts (files, terminal, editor, runner, workspaces) | `usr/share/lxqt/wayland/miriway/miriway-shell.config` |
+| Portal routing for `XDG_CURRENT_DESKTOP=LXQt:miriway:mir`: GTK portal (file chooser, **print dialog**, dark-mode setting) + wlr (screenshot, screen share) | `etc/xdg/xdg-desktop-portal/lxqt-portals.conf` |
 | System-wide dark theme defaults for GTK3/GTK4/dconf (no autostart race) | `etc/gtk-3.0`, `etc/gtk-4.0`, `etc/dconf/{profile,db/local.d}` + `dconf update` at build |
-| Default applications (folders, PDF, images, text, archives) | `etc/xdg/mimeapps.list` (build warns if an ID does not exist) |
-| Thumbnails, removable-media and archive integration in Thunar | `tumbler`, `thunar-volman`, `thunar-archive-plugin` |
-| Printer GUI + print-job tooling in menus and panel | `system-config-printer`, `fuzzel-printjobs`, `konica-scan` entries in the right-click menu; panel button replaces the dead wallpaper button |
-| **Right-click menu was not valid XML** (escaped quote in the Screenshot entry), so labwc could not parse it | fixed in `etc/xdg/labwc/menu.xml` |
-| Menu entries pointing at apps that were never installed (`wpg`, `wlsunset` with hard-coded NYC coordinates, `xfce4-power-manager-settings`, `btop`, `baobab`, a no-op "Clipboard History") | removed; NAPS2 entry now runs the Flatpak |
+| LXQt default applications (folders, PDF, images, text, archives) | `etc/xdg/mimeapps.list` (build warns if an ID does not exist) |
+| LXQt apps: PCManFM-Qt, QTerminal, FeatherPad, LXImage-Qt, LXQt Archiver | recipe |
+| Printer GUI + zenity-based print-job tooling | `system-config-printer`, `lxqt-printjobs`, `konica-scan` desktop entries |
 | `wireplumber` explicit (as upstream now does) | recipe |
 | Keyring manager (Passwords and Keys) for the gnome-keyring secrets store | `seahorse`, entry in the Settings menu |
 
-Not added on purpose: screen locker (upstream removed `swaylock`), Bluetooth, a graphical greeter.
-A graphical greeter (gtkgreet/regreet under cage) is possible later; I did not guess package names for it.
+Not added on purpose: Bluetooth, a graphical greeter beyond tuigreet, and a screen locker
+(lock/suspend are intentionally absent on this Ironlake PC).
 
 ## Base image
 
@@ -165,8 +170,8 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
   change the stage's `from:` to the same number.
 - `mpv.desktop` from upstream is not shipped (mpv is a Flatpak there).
 - `etc/konica206/vendor-data.conf` points at `/var/home/vinod/konica-retrofit/...` on your machine.
-- Upstream dropped `evince`, `gparted` and `gnome-font-viewer` during its LXQt/GNOME phase; this recipe keeps them
-  as in your earlier labwc image. Delete the lines in `recipes/recipe.yml` (and the matching menu entries) if unwanted.
+- `evince` and `gparted` are kept from the earlier image; `gnome-font-viewer` and the Thunar/XFCE
+  app stack were dropped in the LXQt swap.
 
 ## Things to verify on the first build
 
@@ -177,8 +182,9 @@ Updates: `sudo bootc upgrade && sudo systemctl reboot` (the timer only stages).
   `quay.io/fedora/fedora-bootc` is not used here.
 - `files/scripts/` location for the `script` module, the `files` module inside a stage, and the `copy` of `/out/`
   into `/` follow the BlueBuild docs but have not been run.
-- Package names added in this port (`tumbler`, `thunar-volman`, `thunar-archive-plugin`, `system-config-printer`,
-  `wireplumber`, `dconf`) are standard Fedora names but unchecked against the live repo.
+- LXQt/Miriway package names (`lxqt-session`, `lxqt-panel`, `miriway`, `miriway-session`,
+  `lxqt-miriway-session`, `lxqt-wayland-session-default-compositor-miriway`, `zenity`, …) were
+  checked against Fedora 45 before the switch; recheck when the base moves to a newer release.
 - `sane-ar206` is an **fc44** RPM; if the base moves to Fedora 45 the install may fail until upstream rebuilds it.
 - `qt5-qtbase-gui` is kept for the Epson utility (upstream's new package list dropped it).
 - Check the build log for `WARNING: mimeapps.list references missing ...` and fix any ID.

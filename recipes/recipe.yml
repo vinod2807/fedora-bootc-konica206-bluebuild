@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 #
-# BlueBuild port of vinod2807/fedora-bootc-konica206 -- labwc desktop edition.
+# BlueBuild port of vinod2807/fedora-bootc-konica206 -- LXQt/Miriway desktop edition.
 # Printer/system side tracks upstream (tools/import-from-source.sh); the desktop
-# (labwc + sfwbar + foot + greetd/tuigreet) is owned by THIS repo, because upstream
-# moved to Cinnamon/LightDM and this image deliberately does not.
+# (LXQt + Miriway + greetd/tuigreet) is owned by THIS repo, because upstream moved
+# to Cinnamon/LightDM and this image deliberately does not.
 ---
 name: fedora-bootc-konica206-bluebuild
-description: Fedora bootc - labwc desktop + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
+description: Fedora bootc - LXQt/Miriway desktop + Konica Minolta bizhub 206 (PAPPL + native C11 encoder), legacy-BIOS friendly
 base-image: ghcr.io/blue-build/base-images/fedora-base
 # Follows the Fedora release train like the original (BASE_IMAGE=:latest).
 # To freeze, set e.g. "44" here AND change `from:` of the stage below.
@@ -15,7 +15,7 @@ platforms:
   - linux/amd64
 
 labels:
-  org.opencontainers.image.title: "Fedora bootc - labwc + Konica bizhub 206 (BlueBuild)"
+  org.opencontainers.image.title: "Fedora bootc - LXQt/Miriway + Konica bizhub 206 (BlueBuild)"
   org.opencontainers.image.licenses: "NOASSERTION"
   # Printer source commit SHAs are recorded inside the image instead:
   #   /usr/share/konica206/{app,native,retrofit}-commit
@@ -45,39 +45,46 @@ modules:
     install:
       install-weak-deps: false
       packages:
-        # --- labwc desktop ---
-        - labwc
-        - sfwbar
-        - foot
+        # --- LXQt desktop, composited by Miriway ---
+        - lxqt-session
+        - lxqt-wayland-session
+        - lxqt-panel
+        - lxqt-runner
+        - lxqt-config
+        - lxqt-notificationd
+        - lxqt-policykit
+        - lxqt-powermanagement
+        - lxqt-about
+        - lxqt-admin
+        - lxqt-themes
+        - lxqt-themes-fedora
+        - pcmanfm-qt
+        - qterminal
+        - featherpad
+        - lximage-qt
+        - lxqt-archiver
+        - miriway
+        - miriway-session
+        - lxqt-miriway-session
+        - lxqt-wayland-session-default-compositor-miriway
         - greetd
         - tuigreet
-        - fuzzel
         - swaybg
         - swayidle
         - brightnessctl
-        - mako
+        - udiskie
         - grim
         - slurp
         - wl-clipboard
-        - wob
-        - wdisplays
-        - lxpolkit
-        - udiskie
+        - zenity
         - xorg-x11-server-Xwayland
-        # --- apps ---
-        - Thunar
-        - thunar-volman
-        - thunar-archive-plugin
-        - tumbler
+        # --- apps kept (non-LXQt desktop shell pieces are gone) ---
         - evince
-        - mousepad
-        - xarchiver
         - pavucontrol
         - simple-scan
         - weechat
         - flatseal
         - gparted
-        - gnome-font-viewer
         - fastfetch
         - gh
         # --- integration: portals, keyring, session, network, audio, theme ---
@@ -131,7 +138,7 @@ modules:
         - ghostscript
         - system-config-printer
         # Provides system-config-printer-applet + /etc/xdg/autostart/print-applet.desktop
-        # (print queue tray applet used by the previous XFCE install).
+        # (print queue tray applet; LXQt's panel picks up SNI tray icons).
         - system-config-printer-applet
         - legacy-printer-app
         - pappl
@@ -141,21 +148,35 @@ modules:
         - samba-client
     # The Flatpak versions of these apps are restored from the previous install;
     # remove the Fedora repo duplicates (Firefox also comes from the base image).
+    # The rest are leftovers from the old labwc/XFCE shell that the LXQt swap
+    # replaces; auto-remove stays off so printer dependencies survive.
     remove:
       auto-remove: false
       packages:
         - firefox
         - firefox-langpacks
         - gthumb
+        - labwc
+        - sfwbar
+        - foot
+        - fuzzel
+        - xfce4-panel
+        - thunar
+        - thunar-volman
+        - thunar-archive-plugin
+        - tumbler
+        - mousepad
+        - xarchiver
+        - gnome-font-viewer
 
   # Static assets at their final absolute paths (see tools/import-from-source.sh)
-  # plus the labwc desktop integration files this repo owns.
+  # plus the LXQt/Miriway desktop integration files this repo owns.
   - type: files
     files:
       - source: system
         destination: /
       # /usr/local/bin comes from the konica-build stage output (COPY --link
-      # replaces that directory), including fuzzel-printjobs and konica-scan.
+      # replaces that directory), including lxqt-printjobs and konica-scan.
       - source: local-rpms
         destination: /usr/share/konica206-build/local-rpms
 
