@@ -90,20 +90,30 @@ install -m 0644 "$IN/90-konica206uri.conf" \
 install -m 0644 "$IN/konica206uri.tmpfiles.conf" \
     "$root/usr/lib/tmpfiles.d/konica206uri.conf"
 
+# Duplex back-side fix for the legacy konica206uri queue: the vendor encoder
+# (/usr/bin/konica-native) has no PPD back-side logic, and no stage in the
+# CUPS -> PAPPL chain rotates even pages.  Rotate back pages 180 degrees in
+# the raster before the encoder, using the wrapper installed below.  Verified
+# on paper: long-edge duplex back upright; short-edge and simplex unchanged.
+install -m 0755 "$IN/konica-rotate-backside.py" \
+    "$IN/konica-native-legacy-duplex" "$root/usr/local/bin/"
+
 ppd="$root/usr/share/konica206/legacy-ppd/KonicaMinolta-206-fullbleed.ppd"
-sed -e 's#^\*cupsFilter: .*#*cupsFilter: "application/vnd.cups-raster 0 /usr/bin/konica-native"#' \
+sed -e 's#^\*cupsFilter: .*#*cupsFilter: "application/vnd.cups-raster 0 /usr/local/bin/konica-native-legacy-duplex"#' \
     -e 's#^\*DefaultDuplex:.*#*DefaultDuplex: None#' \
     -e 's#^\*cupsManualCopies:.*#*cupsManualCopies: True#' \
-    -e 's#^\*cupsBackSide:.*#*cupsBackSide: Rotated#' \
+    -e 's#^\*cupsBackSide:.*#*cupsBackSide: Normal#' \
     -e '/^\*OCM_resourceDir:/d' \
     retrofit/backup/var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd > "$ppd"
-grep -qxF '*cupsFilter: "application/vnd.cups-raster 0 /usr/bin/konica-native"' "$ppd"
+grep -qxF '*cupsFilter: "application/vnd.cups-raster 0 /usr/local/bin/konica-native-legacy-duplex"' "$ppd"
 grep -qxF '*DefaultDuplex: None' "$ppd"
-grep -qxF '*cupsBackSide: Rotated' "$ppd"
+grep -qxF '*cupsBackSide: Normal' "$ppd"
 ! grep -q '^\*OCM_resourceDir:' "$ppd"
-# Rotated-backside variant (upstream: docs/DUPLEX-BACKSIDE.md).
+# Rotated-backside variant (upstream: docs/DUPLEX-BACKSIDE.md): keep this one
+# Rotated for consumers that still expect the legacy pdftoraster semantics.
 install -d -m 0755 "$root/usr/share/konica206/ppd"
-cp "$ppd" "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
+sed 's/^\*cupsBackSide:.*/*cupsBackSide: Rotated/' "$ppd" \
+    > "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
 grep -qxF '*cupsBackSide: Rotated' "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
 # Normal-backside copy for the PAPPL app's builtin renderer (upstream
 # konica206-native-alpine 30c0739): CUPS/legacy PPDs keep Rotated, but the
