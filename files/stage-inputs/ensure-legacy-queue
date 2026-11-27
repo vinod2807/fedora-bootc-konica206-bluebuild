@@ -3,7 +3,7 @@
 # present.
 #
 # The legacy stack is a PAPPL "Legacy Printer Application" (pappl-retrofit)
-# that serves the retrofit full-bleed PPD through /usr/bin/konica-native, plus
+# that serves the retrofit full-bleed PPD through the vendor 245igdirf filter, plus
 # two CUPS proxy queues (konica206uri and konica206uri-ppd) that desktop
 # applications print through. It coexists with the native konica206
 # application: USB interface 1 is opened per job, so only one of them drives

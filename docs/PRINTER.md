@@ -176,15 +176,33 @@ second, independent path to the same printer:
 
 ```
 IPP client -> CUPS queue konica206uri -> Legacy Printer Application :8000
-           -> pappl-retrofit raster -> /usr/bin/konica-native -> USB backend -> bizhub 206
+           -> pappl-retrofit raster -> 245igdirf -> USB backend -> bizhub 206
 ```
 
-The retrofit full-bleed PPD is used unchanged except for two build-time edits:
-its vendor filter `/usr/local/lib/konica/.../245igdirf` is replaced by the open
-`/usr/bin/konica-native`, and the default duplex mode is pinned to `None`.
+The retrofit full-bleed PPD is used with the **vendor** filter
+`/usr/local/lib/konica/KonicaMinolta/245igdi/Filters/245igdirf` (a symlink into
+persistent `/var/lib/konica206/vendor`), not the open `konica-native` encoder.
+Three build-time edits are applied and asserted:
+
+- `*cupsFilter` points at `245igdirf`;
+- `*OCM_resourceDir` points at `/usr/local/lib/konica/KonicaMinolta/245igdi`
+  (the Fedora path — the old Ubuntu `/usr/lib/cups/filter/...` path does not
+  exist here). Without it, and without the `245igdirf.ocm` symlink installed by
+  `konica206-install-vendor-data`, the filter exits 2 and CUPS misleadingly
+  reports `pdftoraster filter function failed`;
+- `*DefaultDuplex: None` and `*cupsBackSide: Normal`. `245igdirf` handles the
+  206's own long-edge duplexer; a `Rotated` PPD rotates the back page a second
+  time (verified on paper 2026-11-27). The `konica-native` back-side wrapper is
+  no longer used by this queue.
+
 `*ImageableArea` must stay equal to `*PaperDimension` for every size: an inset
 area makes the encoder's raster smaller than the sheet the device declares and
-ghosting appears. The build fails if the PPD filter line moves upstream.
+ghosting appears. The build fails if any of these PPD lines move upstream.
+
+If `/etc/systemd/system/legacy-printer-app.service.d/90-konica206uri.conf` is
+locally overridden to put `/etc/konica206/legacy-ppd-normal` first in
+`PPD_PATHS`, that PPD is the one PAPPL actually loads; keep it in sync with
+`/usr/share/konica206/legacy-ppd/KonicaMinolta-206-fullbleed.ppd`.
 
 `konica206uri-queue.service` runs at boot and on every USB add. It waits for
 the application, adds the `konica206uri` printer with

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Install the Konica Minolta 245igdi runtime data that the native encoder needs.
+# Install the Konica Minolta 245igdi runtime data: halftones and ICC profiles
+# for konica-native, plus the vendor 245igdirf filter and its OCM resource that
+# the legacy konica206uri queue now uses.
 #
-# The three files are Konica Minolta property and are NOT redistributed with
-# this image or repository. You must supply them from your own licensed copy of
-# the bizhub 206 driver. Nothing here prints file contents.
+# These files are Konica Minolta property and are NOT redistributed with this
+# image or repository. You must supply them from your own licensed copy of the
+# bizhub 206 driver. Nothing here prints file contents.
 #
 # The encoder resolves this data at a compiled-in path:
 #   /usr/local/lib/konica/KonicaMinolta/245igdi/...
@@ -16,9 +18,9 @@
 #   sudo konica206-install-vendor-data --no-restart /path/to/dir-or-tarball
 #
 # Accepted source layouts (the installer searches for these):
-#   <src>/KonicaMinolta/245igdi/{Halftones,Profiles}/...
-#   <src>/245igdi/{Halftones,Profiles}/...
-#   <src>/{Halftones,Profiles}/...
+#   <src>/KonicaMinolta/245igdi/{Filters,Halftones,Profiles}/...
+#   <src>/245igdi/{Filters,Halftones,Profiles}/...
+#   <src>/{Filters,Halftones,Profiles}/...
 # A .tar, .tar.gz, .tgz, .tar.xz or .zip archive is also accepted.
 set -euo pipefail
 
@@ -26,6 +28,9 @@ DEST=/var/lib/konica206/vendor/KonicaMinolta/245igdi
 HFT=COPA.DEFAULT.600x600.hft
 SRGB=sRGB.icm
 GRAY=sGrayInv.icm
+FILTER=245igdirf
+OCM=mtorf.ocm
+FILTER_OCM=245igdirf.ocm
 RESTART=1
 MODE=install
 SOURCE=
@@ -48,7 +53,10 @@ done
 missing_paths() {
     local root=$1
     local f
-    for f in "Halftones/$HFT" "Profiles/$SRGB" "Profiles/$GRAY"; do
+    # The 245igdirf.ocm symlink is created at the destination below, so it is
+    # deliberately not required from the licensed source tree.
+    for f in "Halftones/$HFT" "Profiles/$SRGB" "Profiles/$GRAY" \
+         "Filters/$FILTER" "Filters/$OCM"; do
         [[ -s "$root/$f" ]] || return 1
     done
 }
@@ -70,7 +78,8 @@ find_root() {
 
 if [[ $MODE == check ]]; then
     rc=0
-    for f in "Halftones/$HFT" "Profiles/$SRGB" "Profiles/$GRAY"; do
+    for f in "Halftones/$HFT" "Profiles/$SRGB" "Profiles/$GRAY" \
+         "Filters/$FILTER" "Filters/$OCM" "Filters/$FILTER_OCM"; do
         if [[ -s "$DEST/$f" ]]; then
             printf 'OK   %s\n' "$DEST/$f"
         else
@@ -122,14 +131,22 @@ esac
 ROOT=$(find_root "$SRC" || true)
 if [[ -z $ROOT ]]; then
     echo "Could not find the required files under $SOURCE." >&2
-    echo "Expected Halftones/$HFT, Profiles/$SRGB and Profiles/$GRAY." >&2
+    echo "Expected Halftones/$HFT, Profiles/$SRGB, Profiles/$GRAY," >&2
+    echo "Filters/$FILTER and Filters/$OCM." >&2
     exit 1
 fi
 
-install -d -m 0755 "$DEST/Halftones" "$DEST/Profiles"
+install -d -m 0755 "$DEST/Halftones" "$DEST/Profiles" "$DEST/Filters"
 install -m 0644 "$ROOT/Halftones/$HFT" "$DEST/Halftones/$HFT"
 install -m 0644 "$ROOT/Profiles/$SRGB" "$DEST/Profiles/$SRGB"
 install -m 0644 "$ROOT/Profiles/$GRAY" "$DEST/Profiles/$GRAY"
+# The legacy konica206uri PPD runs the vendor filter from this directory, and
+# 245igdirf resolves <basename>.ocm next to itself (not from the resource dir).
+install -m 0755 "$ROOT/Filters/$FILTER" "$DEST/Filters/$FILTER"
+install -m 0644 "$ROOT/Filters/$OCM" "$DEST/Filters/$OCM"
+ln -sfn "$DEST/Filters/$OCM" "$DEST/Filters/$FILTER_OCM"
+[[ -s "$DEST/Filters/$FILTER_OCM" ]] || {
+    echo "Missing $DEST/Filters/$FILTER_OCM" >&2; exit 1; }
 # CUPS filters may run as lp; ensure the runtime data is traversable/readable.
 chmod 0755 /var/lib/konica206 /var/lib/konica206/vendor 2>/dev/null || true
 chmod -R a+rX /var/lib/konica206/vendor 2>/dev/null || true
@@ -145,12 +162,21 @@ for p in "$ROOT"/Profiles/*.icm; do
 done
 
 missing=False
-for f in "Halftones/$HFT" "Profiles/$SRGB" "Profiles/$GRAY"; do
+for f in "Halftones/$HFT" "Profiles/$SRGB" "Profiles/$GRAY" \
+         "Filters/$FILTER" "Filters/$OCM" "Filters/$FILTER_OCM"; do
     [[ -s "$DEST/$f" ]] || missing=True
 done
 if [[ $missing == True ]]; then
     echo "installation failed validation" >&2
     exit 1
+fi
+
+# 245igdirf is executed through the /usr/local/lib/konica symlink, so SELinux
+# checks the real path under /var. Label it as a normal executable; a denial
+# would otherwise look like a silent CUPS filter failure.
+if command -v semanage >/dev/null 2>&1 && command -v restorecon >/dev/null 2>&1; then
+    semanage fcontext -a -t bin_t "$DEST/Filters/$FILTER" 2>/dev/null || true
+    restorecon -v "$DEST/Filters/$FILTER" 2>/dev/null || true
 fi
 
 echo "Installed Konica 245igdi runtime data under $DEST"

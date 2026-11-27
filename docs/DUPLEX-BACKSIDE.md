@@ -78,3 +78,13 @@ Offline (probe queue + socket sink + URF decode + ink IoU):
 - On real hardware, both Papers and pdfcraft printed duplex long-edge
   correctly to `konica206uri`.
 - Classic queue and pdfcraft unchanged.
+
+## 2026-11-27 addendum: legacy queue now uses vendor `245igdirf`
+
+The `konica206uri` legacy PPD now runs
+`/usr/local/lib/konica/KonicaMinolta/245igdi/Filters/245igdirf` instead of the
+open `konica-native` encoder. With the vendor filter, `*cupsBackSide: Normal`
+is correct: `245igdirf` handles the 206's long-edge duplexer itself, and a
+`Rotated` PPD produced an upside-down back page on a real duplex long-edge test.
+The `konica-native-legacy-duplex` raster-rotation wrapper is no longer used by
+this queue; the separate `konica206-native` app and its `Normal` PPD are unchanged.

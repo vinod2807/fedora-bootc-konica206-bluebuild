@@ -90,36 +90,48 @@ install -m 0644 "$IN/90-konica206uri.conf" \
 install -m 0644 "$IN/konica206uri.tmpfiles.conf" \
     "$root/usr/lib/tmpfiles.d/konica206uri.conf"
 
-# Duplex back-side fix for the legacy konica206uri queue: the vendor encoder
-# (/usr/bin/konica-native) has no PPD back-side logic, and no stage in the
-# CUPS -> PAPPL chain rotates even pages.  Rotate back pages 180 degrees in
-# the raster before the encoder, using the wrapper installed below.  Verified
-# on paper: long-edge duplex back upright; short-edge and simplex unchanged.
-install -m 0755 "$IN/konica-rotate-backside.py" \
-    "$IN/konica-native-legacy-duplex" "$root/usr/local/bin/"
-
+# Legacy konica206uri stack: drive the retrofit full-bleed PPD with the real
+# Konica 245igdirf filter instead of the open konica-native encoder. The vendor
+# binary resolves its halftones/profiles/OCM file relative to *OCM_resourceDir,
+# so that line MUST point at the persistent vendor tree on this Fedora image;
+# without it 245igdirf exits with status 2 and CUPS reports the misleading
+# "pdftoraster filter function failed". Keep cupsBackSide Normal: 245igdirf
+# handles the 206's own long-edge duplexer, and a Rotated PPD rotates the back
+# a second time (verified on paper 2026-11-27: Rotated reversed the back page).
+# The konica-native back-side wrapper is therefore no longer used by this
+# queue (the separate konica206-native app is left untouched below).
+vendor_dir=/usr/local/lib/konica/KonicaMinolta/245igdi
+vendor_filter=$vendor_dir/Filters/245igdirf
 ppd="$root/usr/share/konica206/legacy-ppd/KonicaMinolta-206-fullbleed.ppd"
-sed -e 's#^\*cupsFilter: .*#*cupsFilter: "application/vnd.cups-raster 0 /usr/local/bin/konica-native-legacy-duplex"#' \
+sed -e "s#^\\*cupsFilter: .*#*cupsFilter: \"application/vnd.cups-raster 0 $vendor_filter\"#" \
     -e 's#^\*DefaultDuplex:.*#*DefaultDuplex: None#' \
     -e 's#^\*cupsManualCopies:.*#*cupsManualCopies: True#' \
     -e 's#^\*cupsBackSide:.*#*cupsBackSide: Normal#' \
-    -e '/^\*OCM_resourceDir:/d' \
+    -e "s#^\\*OCM_resourceDir:.*#*OCM_resourceDir: \"$vendor_dir\"#" \
     retrofit/backup/var/lib/legacy-printer-app/ppd/KonicaMinolta-206-fullbleed.ppd > "$ppd"
-grep -qxF '*cupsFilter: "application/vnd.cups-raster 0 /usr/local/bin/konica-native-legacy-duplex"' "$ppd"
+# The upstream PPD normally carries *OCM_resourceDir; add it if it ever moves.
+grep -q '^\*OCM_resourceDir:' "$ppd" \
+    || printf '%s\n' "*OCM_resourceDir: \"$vendor_dir\"" >> "$ppd"
+grep -qxF "*cupsFilter: \"application/vnd.cups-raster 0 $vendor_filter\"" "$ppd"
+grep -qxF "*OCM_resourceDir: \"$vendor_dir\"" "$ppd"
 grep -qxF '*DefaultDuplex: None' "$ppd"
 grep -qxF '*cupsBackSide: Normal' "$ppd"
-! grep -q '^\*OCM_resourceDir:' "$ppd"
-# Rotated-backside variant (upstream: docs/DUPLEX-BACKSIDE.md): keep this one
-# Rotated for consumers that still expect the legacy pdftoraster semantics.
+# Rotated-backside variant (upstream: docs/DUPLEX-BACKSIDE.md) is kept for
+# consumers that still expect the CUPS pdftoraster semantics.
 install -d -m 0755 "$root/usr/share/konica206/ppd"
 sed 's/^\*cupsBackSide:.*/*cupsBackSide: Rotated/' "$ppd" \
     > "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
 grep -qxF '*cupsBackSide: Rotated' "$root/usr/share/konica206/ppd/KonicaMinolta-206-fullbleed-rotated.ppd"
-# Normal-backside copy for the PAPPL app's builtin renderer (upstream
-# konica206-native-alpine 30c0739): CUPS/legacy PPDs keep Rotated, but the
-# 206's duplexer binds long edge itself, so the app must not pre-rotate backs.
-sed 's/^\*cupsBackSide:.*/*cupsBackSide: Normal/' "$ppd" \
+# Normal-backside copy for the PAPPL native app's builtin renderer (upstream
+# konica206-native-alpine 30c0739): that app still uses /usr/bin/konica-native
+# (KONICA_VENDOR_FILTER in konica206-native.service) and must not pre-rotate
+# duplex backs. Keep its filter line and drop OCM_resourceDir as before.
+sed -e 's#^\*cupsFilter: .*#*cupsFilter: "application/vnd.cups-raster 0 /usr/bin/konica-native"#' \
+    -e 's/^\*cupsBackSide:.*/*cupsBackSide: Normal/' \
+    -e '/^\*OCM_resourceDir:/d' "$ppd" \
     > "$root/usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd"
+grep -qxF '*cupsFilter: "application/vnd.cups-raster 0 /usr/bin/konica-native"' \
+    "$root/usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd"
 grep -qxF '*cupsBackSide: Normal' "$root/usr/share/konica206/ppd/KonicaMinolta-206-native-normal.ppd"
 
 gcc -O2 -std=gnu17 -Wall -Wextra \
